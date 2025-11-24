@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BH Estimate Tool v26 (Restored)</title>
+    <title>BH Estimate Tool v27 (Robust)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -11,6 +11,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
 
     <script>
         tailwind.config = {
@@ -20,9 +22,7 @@
                     colors: {
                         brand: { orange: '#c26e30', dark: '#0e1118' },
                         gray: { 950: '#030712' },
-                        amber: { 950: '#451a03' },
-                        orange: { 950: '#431407' },
-                        slate: { 800: '#1e293b', 900: '#0f172a', 950: '#020617' }
+                        slate: { 800: '#1e293b', 900: '#0f172a' }
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
@@ -34,10 +34,10 @@
     </script>
 
     <style>
-        /* APP STYLES */
+        /* BASE STYLES */
         body { font-family: 'Inter', sans-serif; transition: background-color 0.3s, color 0.3s; }
         
-        /* MAIN SHEET */
+        /* SHEET CONTAINER */
         .sheet-container { 
             border: 2px solid #000; 
             background: #fff; 
@@ -54,14 +54,15 @@
         .dark table.app-table th, .dark table.app-table td { border-color: #4b5563; }
         table.app-table tr:last-child td { border-bottom: none; }
         table.app-table th:last-child, table.app-table td:last-child { border-right: none; }
-        
+        table.app-table tr:hover td { background-color: rgba(0,0,0,0.02); }
+
         /* INPUTS */
         .cell-input { width: 100%; height: 100%; background: transparent; outline: none; text-align: center; font-family: inherit; font-size: inherit; color: inherit; }
         .cell-input.left { text-align: left; padding-left: 4px; }
         .cell-input:focus { background-color: rgba(59, 130, 246, 0.1); }
         textarea.cell-input { resize: none; overflow: hidden; min-height: 1.2em; display: block; white-space: pre-wrap; line-height: 1.2; padding-top: 2px; }
 
-        /* PDF TEMPLATE STYLES (Hidden normally) */
+        /* PDF TEMPLATE (Hidden) */
         #pdf-template { display: none; font-family: 'Inter', sans-serif; color: #000; background: #fff; width: 100%; max-width: 1100px; }
         #pdf-template h1, #pdf-template h2, #pdf-template h3, #pdf-template .header-title { font-family: 'Oswald', sans-serif; }
         
@@ -74,16 +75,29 @@
         #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
         @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+
+        /* PRINT */
+        .pdf-page-break { page-break-before: always; border-top: 2px solid #000; margin-top: 20px; padding-top: 40px; }
+        .hidden-on-screen { display: none; }
+        .visible-on-pdf { display: block !important; }
+        @media print {
+            body { background: white; margin: 0; color: black; }
+            .no-print { display: none !important; }
+            .sheet-container { box-shadow: none; margin: 0; width: 100%; max-width: none; border: none; }
+            input, textarea, select { border: none; background: transparent; resize: none; appearance: none; color: black; }
+            textarea { height: auto; overflow: visible; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 dark:bg-gray-950 dark:text-gray-100 p-4">
 
     <div class="max-w-[1300px] mx-auto flex justify-between items-center mb-4 bg-white dark:bg-gray-800 p-3 rounded shadow">
         <div class="flex items-center gap-4">
-            <h1 class="text-xl font-bold">BH Estimate Tool v26</h1>
+            <h1 class="text-xl font-bold">BH Estimate Tool v27</h1>
             <div class="text-xs flex items-center gap-2 text-gray-500 dark:text-gray-400">
-                <span id="db-status" class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
-                <span id="db-text">Connecting...</span>
+                <span id="db-status" class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
+                <span id="db-text">Local Mode (Syncing...)</span>
             </div>
         </div>
         <div class="flex items-center gap-2">
@@ -100,7 +114,8 @@
     </div>
 
     <div id="ui-container" class="sheet-container">
-        <div class="text-center py-4 border-b-2 border-black dark:border-gray-600">
+        <div class="text-center py-4 border-b-2 border-black dark:border-gray-600 relative">
+            <img id="logo-display" class="h-12 absolute left-4 top-4 hidden object-contain" alt="Logo">
             <h1 class="text-3xl font-bold header-font">BH Installation & Transport</h1>
         </div>
 
@@ -119,7 +134,7 @@
 
         <div class="flex border-b-2 border-black dark:border-gray-600">
             <div class="w-full flex">
-                <div class="bg-total-orange font-bold text-xs p-2 flex items-center border-r border-black dark:border-gray-600 w-1/3">Estimate valid to (90 days):</div>
+                <div class="bg-orange-200 dark:bg-orange-900 font-bold text-xs p-2 flex items-center border-r border-black dark:border-gray-600 w-1/3">Estimate valid to (90 days):</div>
                 <div class="font-bold text-xs p-2 bg-white dark:bg-gray-900 flex-grow flex items-center" id="validDate"></div>
             </div>
         </div>
@@ -131,7 +146,7 @@
                     <thead><tr class="text-xs bg-blue-100 dark:bg-blue-900"><th>Items</th><th>Qty</th><th>Hrs</th><th>Total</th><th class="bg-white dark:bg-gray-900 border-none"></th></tr></thead>
                     <tbody id="custom-rows-container"></tbody>
                 </table>
-                <div class="p-1 text-center bg-gray-50 dark:bg-gray-800 space-x-2 border-b border-black dark:border-gray-600">
+                <div class="no-print p-1 text-center bg-gray-50 dark:bg-gray-800 space-x-2 border-b border-black dark:border-gray-600">
                     <button onclick="addItemRow()" class="text-[10px] text-blue-600 font-bold">+ Row</button>
                     <button onclick="openPasteFromGPT()" class="text-[10px] text-amber-600 font-bold">Paste Table</button>
                 </div>
@@ -156,16 +171,20 @@
 
             <div class="w-7/12 flex flex-col">
                 <div class="flex h-24 border-b-2 border-black dark:border-gray-600">
-                    <div class="w-1/2 border-r border-black dark:border-gray-600 p-2 flex flex-col">
-                        <div class="text-[10px] font-bold mb-1 text-center">Collection Address</div>
-                        <textarea id="colAddr" class="w-full flex-grow bg-transparent resize-none text-xs text-center font-bold"></textarea>
+                    <div class="w-1/2 border-r border-black dark:border-gray-600 p-2 flex flex-col bg-blue-50 dark:bg-blue-900/10">
+                        <div class="text-[10px] font-bold mb-1 text-center border-b border-gray-300 dark:border-gray-600">Collection Address</div>
+                        <textarea id="colAddr" class="w-full flex-grow bg-transparent resize-none text-xs text-center font-bold" placeholder="Enter Collection..."></textarea>
                     </div>
-                    <div class="w-1/2 p-2 flex flex-col">
-                        <div class="text-[10px] font-bold mb-1 text-center">Site Address</div>
-                        <textarea id="siteAddr" class="w-full flex-grow bg-transparent resize-none text-xs text-center font-bold"></textarea>
+                    <div class="w-1/2 p-2 flex flex-col bg-blue-50 dark:bg-blue-900/10">
+                        <div class="text-[10px] font-bold mb-1 text-center border-b border-gray-300 dark:border-gray-600">Site Address</div>
+                        <textarea id="siteAddr" class="w-full flex-grow bg-transparent resize-none text-xs text-center font-bold" placeholder="Enter Site Address..."></textarea>
                     </div>
                 </div>
                 
+                <div class="bg-yellow-50 dark:bg-yellow-900/20 p-2 h-20 border-b border-black dark:border-gray-600">
+                     <textarea id="specificNotes" class="w-full h-full bg-transparent resize-none text-xs placeholder-yellow-600 dark:placeholder-yellow-500 outline-none" placeholder="Site specific notes..."></textarea>
+                </div>
+
                 <table class="app-table">
                     <thead><tr class="bg-gray-200 dark:bg-gray-700 text-xs"><th>Role</th><th>Installers</th><th>Cost/Day</th><th>Days</th><th>Total</th></tr></thead>
                     <tbody id="labour-rows" class="text-xs"></tbody>
@@ -241,6 +260,8 @@
         </div>
     </div>
 
+    <div id="toast">Saved!</div>
+
     <div id="admin-view" class="modal-overlay hidden">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-2xl p-6 w-[1000px] h-[90vh] flex flex-col text-gray-900 dark:text-gray-100">
             <div class="flex justify-between mb-4 border-b pb-2"><h2 class="text-xl font-bold">Admin</h2><button onclick="toggleAdmin()">✕</button></div>
@@ -259,98 +280,190 @@
         </div>
     </div>
 
-    <div id="toast">Saved!</div>
+    <div id="paste-modal" class="modal-overlay hidden"><div class="bg-white dark:bg-gray-800 p-6 rounded w-[600px]"><textarea id="paste-input" class="w-full h-40 border"></textarea><div class="flex justify-end mt-2 gap-2"><button onclick="applyPasteFromGPT(true)" class="bg-gray-200 px-3 rounded">Append</button><button onclick="closePasteFromGPT()" class="text-red-500">Close</button></div></div></div>
+    <div id="library-view" class="modal-overlay hidden"><div class="bg-white dark:bg-gray-800 p-6 rounded w-[1000px] h-[80vh] flex flex-col"><input id="lib-search" class="border p-2 mb-2" placeholder="Search..." oninput="filterLibrary()"><div class="overflow-y-auto flex-grow"><table class="w-full text-sm"><tbody id="lib-list"></tbody></table></div><button onclick="document.getElementById('library-view').classList.add('hidden')" class="mt-2 text-gray-500">Close</button></div></div>
 
     <script>
         const PROJECT_URL = 'https://wgsqrjnliglemogtukly.supabase.co';
         const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indnc3Fyam5saWdsZW1vZ3R1a2x5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5ODY2MTIsImV4cCI6MjA3OTU2MjYxMn0.chlJ9Ba2kQDu_xnqMfwcRwv5pgiwHnv7FJJSzKxbPeM';
         const supabase = window.supabase.createClient(PROJECT_URL, ANON_KEY);
 
+        const DEFAULT_TERMS = `1. All estimates are supplied on the assumption of clear access...\n2. Waste will be disposed of by a licensed carrier...`;
         const DEFAULT_CONFIG = {
             labour: [ { id: 'l1', label: "Installer + Veh", val: 325, type: 'day' }, { id: 'l2', label: "2 Person Team", val: 550, type: 'day' }, { id: 'l3', label: "Installer On Foot", val: 185, type: 'day' }, { id: 'l4', label: "Supervisor", val: 220, type: 'day' }, { id: 'l5', label: "Custom/Snag", val: 750, type: 'day' } ],
             vehicles: [ { id: 'v1', label: "SWB Van", val: 170, type: 'fixed' }, { id: 'v2', label: "XLWB Van", val: 200, type: 'fixed' }, { id: 'v3', label: "Luton Van", val: 230, type: 'fixed' }, { id: 'v4', label: "7.5T Truck", val: 540, type: 'fixed' }, { id: 'v5', label: "18T Truck", val: 720, type: 'fixed' } ],
             tasks: [ { id: 't1', label: "Standard Uplift", val: 0.3, type: 'hrs' }, { id: 't2', label: "Unwrap/Level", val: 0.2, type: 'hrs' }, { id: 't3', label: "Extended Uplift", val: 0.5, type: 'hrs_check' }, { id: 't4', label: "Stairs (per Item)", val: 0.1, type: 'hrs_check' } ],
             expenses: [ { id: 'e1', label: "Additional Miles", val: 0.90, type: 'fixed' }, { id: 'e2', label: "Waste Disposal", val: 340, type: 'fixed' }, { id: 'e3', label: "ULEZ/City Charge", val: 15, type: 'fixed' }, { id: 'e4', label: "Parking Cost", val: 75, type: 'day' } ],
             globals: [ { id: 'g1', label: "Working Day Hours", val: 7.25 }, { id: 'g2', label: "OOH Multiplier", val: 1.6 }, { id: 'g3', label: "Sat Multiplier", val: 1.75 }, { id: 'g4', label: "Sun Multiplier", val: 2.0 } ],
-            terms: "Standard Terms...", logo: ""
+            terms: DEFAULT_TERMS, logo: ""
         };
 
-        let config = DEFAULT_CONFIG;
+        let config = JSON.parse(JSON.stringify(DEFAULT_CONFIG)); // Deep copy default
+        let currentEstimateId = null;
+        let libraryData = [];
 
         window.onload = async function() {
             lucide.createIcons();
             if(localStorage.getItem('bh_theme') === 'dark') document.body.classList.add('dark');
-            await loadSharedConfig();
-            addItemRow();
+            
+            // Initialize immediately with Defaults (The Fix)
             renderMainSheet();
+            addItemRow();
             document.getElementById('quoteDate').valueAsDate = new Date();
             calc();
+
+            // Then try to load cloud config in background
+            await loadSharedConfig();
         };
 
         async function loadSharedConfig() {
-            const { data } = await supabase.from('app_settings').select('*').eq('id', 1).single();
-            if (data && data.config) { config = data.config; document.getElementById('db-status').className="w-2.5 h-2.5 rounded-full bg-green-500"; document.getElementById('db-text').innerText="Online"; if(config.logo) document.getElementById('admin-logo-preview').src=config.logo; }
+            try {
+                const { data } = await supabase.from('app_settings').select('*').eq('id', 1).single();
+                if (data && data.config && data.config.labour && data.config.labour.length > 0) {
+                    config = data.config;
+                    renderMainSheet(); // Re-render with cloud data
+                    calc();
+                    document.getElementById('db-status').className = "w-2.5 h-2.5 rounded-full bg-green-500";
+                    document.getElementById('db-text').innerText = "Cloud Connected";
+                    if(config.logo) document.getElementById('admin-logo-preview').src = config.logo;
+                }
+            } catch (e) { console.log("Using defaults."); }
         }
 
+        // --- CALC ---
         function calc() {
             let h=0, m=0;
             const val = (id) => parseFloat(document.getElementById(id)?.value)||0;
-            document.querySelectorAll('#custom-rows-container tr').forEach(tr=>{ const q=parseFloat(tr.querySelector('.custom-qty').value)||0, r=parseFloat(tr.querySelector('.custom-rate').value)||0; tr.querySelector('.custom-total').innerText=(q*r).toFixed(1); h+=(q*r); });
-            config.tasks.forEach(t=>{ let v=0; if(t.type==='hrs') v=val(`qty_${t.id}`)*t.val; else if(t.type==='hrs_check' && document.getElementById(`chk_${t.id}`)?.checked) v=val('custom-rows-container').childElementCount * t.val; document.getElementById(`tot_${t.id}`).innerText=v.toFixed(1); h+=v; });
+            
+            document.querySelectorAll('#custom-rows-container tr').forEach(tr=>{
+                const q=parseFloat(tr.querySelector('.custom-qty').value)||0, r=parseFloat(tr.querySelector('.custom-rate').value)||0;
+                tr.querySelector('.custom-total').innerText = (q*r).toFixed(1); h+=(q*r);
+            });
+            
+            config.tasks.forEach(t=>{
+                let v=0;
+                if(t.type==='hrs') v=val(`qty_${t.id}`)*t.val;
+                else if(t.type==='hrs_check' && document.getElementById(`chk_${t.id}`)?.checked) v=val('custom-rows-container').childElementCount * t.val;
+                if(document.getElementById(`tot_${t.id}`)) document.getElementById(`tot_${t.id}`).innerText=v.toFixed(1); h+=v;
+            });
+            
             const dayHrs = config.globals.find(g=>g.label.includes("Hours"))?.val || 7.25;
-            document.getElementById('grandTotalHrs').innerText=h.toFixed(1); document.getElementById('grandTotalDays').innerText=(h/dayHrs).toFixed(2);
+            document.getElementById('grandTotalHrs').innerText=h.toFixed(1);
+            document.getElementById('grandTotalDays').innerText=(h/dayHrs).toFixed(2);
             const manDays = val('manualGlobalDays');
-            [config.labour, config.vehicles, config.expenses].flat().forEach(i=>{ let c=0, q=val(`qty_${i.id}`); if(i.type==='day') { const dInp=document.getElementById(`days_${i.id}`); c = q * (dInp ? (parseFloat(dInp.value)||0) : manDays) * i.val; } else c = q * i.val; if(document.getElementById(`tot_${i.id}`)) document.getElementById(`tot_${i.id}`).innerText = `£${c.toFixed(2)}`; m+=c; });
+
+            [config.labour, config.vehicles, config.expenses].flat().forEach(i=>{
+                let c=0, q=val(`qty_${i.id}`);
+                if(i.type==='day') { 
+                    const dInp=document.getElementById(`days_${i.id}`);
+                    c = q * (dInp ? (parseFloat(dInp.value)||0) : manDays) * i.val;
+                } else c = q * i.val;
+                if(document.getElementById(`tot_${i.id}`)) document.getElementById(`tot_${i.id}`).innerText = `£${c.toFixed(2)}`;
+                m+=c;
+            });
+            
             document.getElementById('finalTotal').innerText = `£${m.toFixed(2)}`;
+            const ooh = config.globals.find(g=>g.label.includes("OOH"))?.val || 1.6;
+            const sat = config.globals.find(g=>g.label.includes("Sat"))?.val || 1.75;
+            const sun = config.globals.find(g=>g.label.includes("Sun"))?.val || 2.0;
+            
+            document.getElementById('oohTotal').innerText = `£${(m*ooh).toFixed(2)}`;
+            document.getElementById('satTotal').innerText = `£${(m*sat).toFixed(2)}`;
+            document.getElementById('sunTotal').innerText = `£${(m*sun).toFixed(2)}`;
         }
 
-        function addItemRow() { document.getElementById('custom-rows-container').insertAdjacentHTML('beforeend', `<tr class="text-xs border-b group border-black dark:border-gray-600"><td class="p-0"><textarea class="cell-input left"></textarea></td><td class="p-0"><input type="number" class="custom-qty cell-input" value="1" oninput="calc()"></td><td class="p-0"><input type="number" class="custom-rate cell-input" oninput="calc()"></td><td class="text-center custom-total">0.0</td><td class="border-none text-center"><button onclick="this.closest('tr').remove();calc()" class="text-red-500 opacity-0 group-hover:opacity-100">x</button></td></tr>`); }
-        
+        // --- RENDER ---
         function renderMainSheet() {
-            const tC=document.getElementById('fixed-tasks-container'); tC.innerHTML=''; config.tasks.forEach(t=>{ tC.innerHTML+=t.type==='hrs'?`<tr><td class="bg-gray-50 dark:bg-gray-800 border-color-inherit">${t.label}</td><td class="p-0"><input type="number" id="qty_${t.id}" class="cell-input" oninput="calc()"></td><td class="text-center text-gray-500">${t.val}</td><td class="text-center font-bold" id="tot_${t.id}">0.0</td></tr>`:`<tr class="bg-yellow-50 dark:bg-amber-950/40 border-color-inherit print-bg-yellow"><td colspan="3" class="font-bold flex items-center gap-2"><input type="checkbox" id="chk_${t.id}" onchange="calc()" class="w-4 h-4 accent-blue-600">${t.label} (+${t.val} hr/item)</td><td class="text-center font-bold" id="tot_${t.id}">0.0</td></tr>`; });
-            const lC=document.getElementById('labour-rows'); lC.innerHTML=''; config.labour.forEach(l=>lC.innerHTML+=`<tr><td class="bg-gray-50 dark:bg-gray-800 pl-2 border-color-inherit">${l.label}</td><td class="p-0"><input type="number" id="qty_${l.id}" class="cell-input" oninput="calc()"></td><td class="text-center">£${l.val}</td><td class="p-0"><input type="number" id="days_${l.id}" class="cell-input" oninput="calc()"></td><td class="text-right pr-2 font-bold" id="tot_${l.id}">£0.00</td></tr>`);
-            const eC=document.getElementById('expenses-rows'); eC.innerHTML=''; const gC=document.getElementById('globals-rows'); gC.innerHTML='';
-            config.expenses.forEach(e=>{ if(e.label.includes("Parking")||e.label.includes("ULEZ")||e.label.includes("City")) gC.innerHTML+=`<div class="grid grid-cols-[2fr_1fr_1fr] border-b border-black dark:border-gray-500 items-center h-8 ${e.label.includes('Parking')?'bg-gray-50 dark:bg-gray-800':''}"><div class="px-2 font-bold flex items-center h-full">${e.label}</div><div class="p-0 h-full border-l border-black dark:border-gray-500"><input type="number" id="qty_${e.id}" value="1" class="cell-input" oninput="calc()"></div><div class="px-2 text-right h-full flex items-center justify-end border-l border-black dark:border-gray-500" id="tot_${e.id}">£0.00</div></div>`; else eC.innerHTML+=`<tr><td class="font-bold pl-2 border-color-inherit">${e.label}</td><td class="p-0"><input type="number" id="qty_${e.id}" class="cell-input" oninput="calc()"></td><td class="text-center">£${e.val}</td><td class="text-right pr-2" id="tot_${e.id}">£0.00</td></tr>`; });
-            const vC=document.getElementById('veh-rows'); vC.innerHTML=''; config.vehicles.forEach((v,i)=>{ const first=i===0?'oninput="syncVehicleAreas(this.value)"':'class="cell-input veh-area-slave"'; vC.innerHTML+=`<tr><td class="bg-gray-50 dark:bg-gray-800 pl-2 text-center border-color-inherit">${v.label}</td><td class="text-center">£${v.val}</td><td class="p-0"><input type="number" id="qty_${v.id}" class="cell-input" oninput="calc()"></td><td class="p-0 border-l border-black dark:border-gray-500"><input type="text" class="cell-input text-gray-500" value="London" ${first}></td><td class="text-right pr-2 font-bold" id="tot_${v.id}">£0.00</td></tr>`; });
+            const tC=document.getElementById('fixed-tasks-container'); tC.innerHTML=''; 
+            config.tasks.forEach(t=>{ tC.innerHTML+=t.type==='hrs'?`<tr><td class="bg-gray-50 dark:bg-gray-800 border-color-inherit">${t.label}</td><td class="p-0"><input type="number" id="qty_${t.id}" class="cell-input" oninput="calc()"></td><td class="text-center text-gray-500">${t.val}</td><td class="text-center font-bold" id="tot_${t.id}">0.0</td></tr>`:`<tr class="bg-yellow-50 dark:bg-amber-950/40 border-color-inherit print-bg-yellow"><td colspan="3" class="font-bold flex items-center gap-2 pl-2"><input type="checkbox" id="chk_${t.id}" onchange="calc()" class="w-4 h-4 accent-blue-600">${t.label} (+${t.val} hr/item)</td><td class="text-center font-bold" id="tot_${t.id}">0.0</td></tr>`; });
+
+            const lC=document.getElementById('labour-rows'); lC.innerHTML=''; 
+            config.labour.forEach(l=>lC.innerHTML+=`<tr><td class="bg-gray-50 dark:bg-gray-800 pl-2 border-color-inherit">${l.label}</td><td class="p-0"><input type="number" id="qty_${l.id}" class="cell-input" oninput="calc()"></td><td class="text-center">£${l.val}</td><td class="p-0"><input type="number" id="days_${l.id}" class="cell-input" oninput="calc()"></td><td class="text-right pr-2 font-bold" id="tot_${l.id}">£0.00</td></tr>`);
+
+            const eC=document.getElementById('expenses-rows'); eC.innerHTML=''; 
+            const gC=document.getElementById('globals-rows'); gC.innerHTML='';
+
+            config.expenses.forEach(e => {
+                if (e.label.includes("Parking") || e.label.includes("ULEZ") || e.label.includes("City")) {
+                     gC.innerHTML += `<div class="grid grid-cols-[2fr_1fr_1fr] border-b border-black dark:border-gray-500 items-center h-8 ${e.label.includes('Parking') ? 'bg-gray-50 dark:bg-gray-800' : ''}"><div class="px-2 font-bold flex items-center h-full">${e.label}</div><div class="p-0 h-full border-l border-black dark:border-gray-500"><input type="number" id="qty_${e.id}" value="1" class="cell-input" oninput="calc()"></div><div class="px-2 text-right h-full flex items-center justify-end border-l border-black dark:border-gray-500" id="tot_${e.id}">£0.00</div></div>`;
+                } else {
+                    eC.innerHTML += `<tr><td class="font-bold pl-2 border-color-inherit">${e.label}</td><td class="p-0"><input type="number" id="qty_${e.id}" class="cell-input" oninput="calc()"></td><td class="text-center">£${e.val}</td><td class="text-right pr-2" id="tot_${e.id}">£0.00</td></tr>`;
+                }
+            });
+
+            const vC=document.getElementById('veh-rows'); vC.innerHTML=''; 
+            config.vehicles.forEach((v,i)=>{ const first=i===0?'oninput="syncVehicleAreas(this.value)"':'class="cell-input veh-area-slave"'; vC.innerHTML+=`<tr><td class="bg-gray-50 dark:bg-gray-800 pl-2 text-center border-color-inherit">${v.label}</td><td class="text-center">£${v.val}</td><td class="p-0"><input type="number" id="qty_${v.id}" class="cell-input" oninput="calc()"></td><td class="p-0 border-l border-black dark:border-gray-500"><input type="text" class="cell-input text-gray-500" value="London" ${first}></td><td class="text-right pr-2 font-bold" id="tot_${v.id}">£0.00</td></tr>`; });
+
             document.getElementById('validDate').innerText = new Date(Date.now() + 90*24*60*60*1000).toLocaleDateString();
-            if(config.logo) document.getElementById('logo-display').src = config.logo;
+            if(config.logo) { document.getElementById('logo-display').src = config.logo; document.getElementById('logo-display').classList.remove('hidden'); }
         }
-        function syncVehicleAreas(val) { document.querySelectorAll('.veh-area-slave').forEach(input => input.value = val); }
 
-        function toggleAdmin(){ const el=document.getElementById('admin-view'); if(el.classList.contains('hidden')) { renderAdminPanel(); el.classList.remove('hidden'); } else el.classList.add('hidden'); }
-        function renderAdminPanel(){ const render=(id, arr)=>{ const c=document.getElementById(id); c.innerHTML=''; config[arr].forEach((i,x)=>{ c.innerHTML+=`<div class="grid grid-cols-[1fr_80px_30px] gap-2 mb-2"><input class="border px-1 text-gray-800" value="${i.label}" onchange="config.${arr}[${x}].label=this.value"><input class="border px-1 text-right text-gray-800" value="${i.val}" type="number" onchange="config.${arr}[${x}].val=parseFloat(this.value)"><button class="text-red-500" onclick="config.${arr}.splice(${x},1);renderAdminPanel()">x</button></div>`; }); }; render('adm-labour-list','labour'); render('adm-tasks-list','tasks'); render('adm-vehicles-list','vehicles'); render('adm-expenses-list','expenses'); render('adm-globals-list','globals'); document.getElementById('adm-terms-input').value=config.terms; if(config.logo) document.getElementById('admin-logo-preview').src=config.logo; }
-        function handleLogoUpload(input){ if(input.files&&input.files[0]){ const r=new FileReader(); r.onload=function(e){ config.logo=e.target.result; document.getElementById('admin-logo-preview').src=config.logo; }; r.readAsDataURL(input.files[0]); } }
-        async function saveAdmin(){ config.terms=document.getElementById('adm-terms-input').value; await supabase.from('app_settings').upsert({id:1, config:config}); toggleAdmin(); renderMainSheet(); calc(); }
-        
-        function generatePDF() {
-            document.getElementById('pdf-ref').innerText = document.getElementById('quoteRef').value;
-            document.getElementById('pdf-date').innerText = document.getElementById('quoteDate').value;
-            document.getElementById('pdf-valid').innerText = document.getElementById('validDate').innerText;
-            document.getElementById('pdf-client').innerText = document.getElementById('clientName').value;
-            document.getElementById('pdf-project').innerText = document.getElementById('projName').value;
-            document.getElementById('pdf-site-addr').innerText = document.getElementById('siteAddr').value;
-            document.getElementById('pdf-scope').innerText = document.getElementById('siteNotes').value;
-            if(config.logo) { document.getElementById('pdf-logo').src = config.logo; document.getElementById('pdf-logo').classList.remove('hidden'); }
-            
-            const tbody = document.getElementById('pdf-item-rows'); tbody.innerHTML = '';
-            document.querySelectorAll('#custom-rows-container tr').forEach(tr => { const d=tr.querySelector('textarea').value; if(d) tbody.innerHTML += `<tr><td class="px-4 py-2">${d}</td><td class="text-center">${tr.querySelector('.custom-qty').value}</td><td class="text-center">${tr.querySelector('.custom-rate').value}</td><td class="text-right">${tr.querySelector('.custom-total').innerText}</td></tr>`; });
-            document.getElementById('pdf-total-hrs').innerText = document.getElementById('grandTotalHrs').innerText;
-            
-            const chList = document.getElementById('pdf-charges-list'); chList.innerHTML = '';
-            config.labour.forEach(l=>{ const v=parseFloat(document.getElementById(`tot_${l.id}`).innerText.replace('£',''))||0; if(v>0) chList.innerHTML+=`<li class="flex justify-between"><span>${l.label}</span><span>£${v.toFixed(2)}</span></li>`; });
-            config.vehicles.concat(config.expenses).forEach(i=>{ const v=parseFloat(document.getElementById(`tot_${i.id}`).innerText.replace('£',''))||0; if(v>0) chList.innerHTML+=`<li class="flex justify-between"><span class="text-gray-500">${i.label}:</span> <span>£${v.toFixed(2)}</span></li>`; });
-            
-            document.getElementById('pdf-final-total').innerText = document.getElementById('finalTotal').innerText;
-            document.getElementById('pdf-labour-days').innerText = document.getElementById('grandTotalDays').innerText;
-            document.getElementById('pdf-terms').innerText = config.terms;
-
-            const element = document.getElementById('pdf-template'); element.style.display = 'block';
-            html2pdf().set({ margin: 0, filename: `${document.getElementById('quoteRef').value}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } }).from(element).save().then(() => { element.style.display = 'none'; });
+        function addItemRow() {
+            document.getElementById('custom-rows-container').insertAdjacentHTML('beforeend', `<tr class="text-xs border-b group border-black dark:border-gray-600"><td class="p-0"><textarea class="cell-input left"></textarea></td><td class="p-0"><input type="number" class="custom-qty cell-input" value="1" oninput="calc()"></td><td class="p-0"><input type="number" class="custom-rate cell-input" oninput="calc()"></td><td class="text-center custom-total">0.0</td><td class="border-none text-center"><button onclick="this.closest('tr').remove();calc()" class="text-red-500 opacity-0 group-hover:opacity-100">x</button></td></tr>`);
         }
+
+        // --- ADMIN & SAVE ---
+        function handleLogoUpload(input) { if(input.files&&input.files[0]){const r=new FileReader();r.onload=function(e){config.logo=e.target.result;document.getElementById('admin-logo-preview').src=config.logo;};r.readAsDataURL(input.files[0]);}}
+        function toggleAdmin(){const el=document.getElementById('admin-view');if(el.classList.contains('hidden')){renderAdminPanel();el.classList.remove('hidden');}else el.classList.add('hidden');}
+        function renderAdminPanel(){const render=(id,arr)=>{const c=document.getElementById(id);c.innerHTML='';config[arr].forEach((i,x)=>{c.innerHTML+=`<div class="grid grid-cols-[1fr_80px_30px] gap-2 mb-2"><input class="border px-1 text-gray-800" value="${i.label}" onchange="config.${arr}[${x}].label=this.value"><input class="border px-1 text-right text-gray-800" value="${i.val}" type="number" onchange="config.${arr}[${x}].val=parseFloat(this.value)"><button class="text-red-500" onclick="config.${arr}.splice(${x},1);renderAdminPanel()">x</button></div>`;});};render('adm-labour-list','labour');render('adm-tasks-list','tasks');render('adm-vehicles-list','vehicles');render('adm-expenses-list','expenses');render('adm-globals-list','globals');document.getElementById('adm-terms-input').value=config.terms;if(config.logo)document.getElementById('admin-logo-preview').src=config.logo;}
+        function updateConfigVal(arr,idx,f,v){if(f==='val')v=parseFloat(v);config[arr][idx][f]=v;}
+        function addNewRow(arr){const id=Date.now().toString().slice(-4);let t=arr==='labour'?'day':(arr==='tasks'?'hrs':'fixed');config[arr].push({id:id,label:"New Item",val:0,type:t});renderAdminPanel();}
+        async function saveAdmin(){config.terms=document.getElementById('adm-terms-input').value;await supabase.from('app_settings').upsert({id:1,config:config});toggleAdmin();renderMainSheet();calc();showToast("Admin Saved");}
+        function newEstimate(){if(confirm("Clear?")){currentEstimateId=null;document.getElementById('quoteRef').value='';document.getElementById('projName').value='';document.getElementById('clientName').value='';document.getElementById('colAddr').value='';document.getElementById('siteAddr').value='';document.getElementById('siteNotes').value='Installation of products...';document.getElementById('specificNotes').value='';document.getElementById('manualGlobalDays').value='1';document.getElementById('custom-rows-container').innerHTML='';addItemRow();document.querySelectorAll('input[type="number"]').forEach(i=>i.value=(i.id==='manualGlobalDays'?1:''));document.querySelectorAll('input[type="checkbox"]').forEach(c=>c.checked=false);calc();showToast("New Estimate");}}
         
-        function toggleTheme(){ const b=document.body; b.classList.toggle('dark'); localStorage.setItem('bh_theme', b.classList.contains('dark')?'dark':'light'); }
-        function newEstimate(){ if(confirm("Clear?")) location.reload(); }
-        function showToast(m){ const t=document.getElementById('toast'); t.innerText=m; t.className="show"; setTimeout(()=>t.className=t.className.replace("show",""),3000); }
+        // --- PDF ---
+        function generatePDF(){
+            saveEstimate('update');
+            const wasDark=document.body.classList.contains('dark');if(wasDark)document.body.classList.remove('dark');
+            const el=document.getElementById('ui-container');const p2=document.getElementById('page-2');
+            p2.classList.remove('hidden-on-screen');p2.classList.add('pdf-page-break');
+            document.querySelectorAll('.no-print').forEach(b=>b.style.display='none');
+            
+            // Populate PDF Template Fields
+            document.getElementById('pdf-ref').innerText=document.getElementById('quoteRef').value;
+            document.getElementById('pdf-date').innerText=document.getElementById('quoteDate').value;
+            document.getElementById('pdf-valid').innerText=document.getElementById('validDate').innerText;
+            document.getElementById('pdf-client').innerText=document.getElementById('clientName').value;
+            document.getElementById('pdf-project').innerText=document.getElementById('projName').value;
+            document.getElementById('pdf-site-addr').innerText=document.getElementById('siteAddr').value;
+            document.getElementById('pdf-scope').innerText=document.getElementById('siteNotes').value;
+            if(config.logo){document.getElementById('pdf-logo').src=config.logo;document.getElementById('pdf-logo').classList.remove('hidden');}
+            
+            const tb=document.getElementById('pdf-item-rows');tb.innerHTML='';
+            document.querySelectorAll('#custom-rows-container tr').forEach(tr=>{const d=tr.querySelector('textarea').value;if(d)tb.innerHTML+=`<tr><td class="px-4 py-2">${d}</td><td class="text-center">${tr.querySelector('.custom-qty').value}</td><td class="text-center">${tr.querySelector('.custom-rate').value}</td><td class="text-right">${tr.querySelector('.custom-total').innerText}</td></tr>`;});
+            document.getElementById('pdf-total-hrs').innerText=document.getElementById('grandTotalHrs').innerText;
+            
+            const cl=document.getElementById('pdf-charges-list');cl.innerHTML='';
+            config.labour.concat(config.vehicles,config.expenses).forEach(i=>{const v=parseFloat(document.getElementById(`tot_${i.id}`).innerText.replace('£',''))||0;if(v>0)cl.innerHTML+=`<li class="flex justify-between"><span>${i.label}</span><span>£${v.toFixed(2)}</span></li>`;});
+            
+            document.getElementById('pdf-final-total').innerText=document.getElementById('finalTotal').innerText;
+            document.getElementById('pdf-labour-days').innerText=document.getElementById('grandTotalDays').innerText;
+            document.getElementById('pdf-terms').innerText=config.terms;
+
+            const tpl=document.getElementById('pdf-template');tpl.style.display='block';
+            html2pdf().set({margin:0,filename:`${document.getElementById('quoteRef').value}.pdf`,image:{type:'jpeg',quality:0.98},html2canvas:{scale:2},jsPDF:{unit:'in',format:'a4',orientation:'portrait'}}).from(tpl).save().then(()=>{
+                document.querySelectorAll('.no-print').forEach(b=>b.style.display='');
+                p2.classList.add('hidden-on-screen');p2.classList.remove('pdf-page-break');tpl.style.display='none';
+                if(wasDark)document.body.classList.add('dark');
+            });
+        }
+
+        // UTILS
+        function fmtMoney(v){return `£${parseFloat(v).toFixed(2)}`;}
+        function showToast(m){const x=document.getElementById("toast");x.innerText=m;x.className="show";setTimeout(()=>x.className=x.className.replace("show",""),3000);}
+        function toggleTheme(){const b=document.body;b.classList.toggle('dark');localStorage.setItem('bh_theme',b.classList.contains('dark')?'dark':'light');}
+        function syncVehicleAreas(v){document.querySelectorAll('.veh-area-slave').forEach(i=>i.value=v);}
+        
+        // PASTE & LIBRARY
+        function openPasteFromGPT(){document.getElementById('paste-modal').classList.remove('hidden');}
+        function closePasteFromGPT(){document.getElementById('paste-modal').classList.add('hidden');}
+        function applyPasteFromGPT(a){const rows=document.getElementById('paste-input').value.split('\n').map(l=>l.split('\t'));if(!a)document.getElementById('custom-rows-container').innerHTML='';rows.forEach(r=>{if(r.length>1){const c=document.getElementById('custom-rows-container');c.insertAdjacentHTML('beforeend',`<tr class="text-xs border-b group border-black dark:border-gray-600"><td class="p-0"><textarea class="cell-input left">${r[0]}</textarea></td><td class="p-0"><input type="number" class="custom-qty cell-input" value="${parseFloat(r[1])||0}" oninput="calc()"></td><td class="p-0"><input type="number" class="custom-rate cell-input" value="${parseFloat(r[2])||0}" oninput="calc()"></td><td class="text-center custom-total">0.0</td><td class="border-none text-center"><button onclick="this.closest('tr').remove();calc()" class="text-red-500 opacity-0 group-hover:opacity-100">x</button></td></tr>`);}});closePasteFromGPT();calc();}
+        async function openLibrary(){document.getElementById('library-view').classList.remove('hidden');const{data}=await supabase.from('estimates').select('*').order('created_at',{ascending:false}).limit(50);if(data){libraryData=data;renderLib(data);}}
+        function renderLib(d){const l=document.getElementById('lib-list');l.innerHTML='';d.forEach(e=>{l.innerHTML+=`<tr class="hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"><td class="p-3">${new Date(e.created_at).toLocaleDateString()}</td><td class="p-3 font-bold">${e.ref_code}</td><td class="p-3">${e.project_name}</td><td class="p-3 text-right">${e.data.total||'£0.00'}</td><td class="p-3 flex gap-2"><button class="text-blue-500" onclick="loadEst(${e.id})">Load</button><button class="text-red-500" onclick="delEst(${e.id})">Del</button></td></tr>`;});}
+        function filterLibrary(){const t=document.getElementById('lib-search').value.toLowerCase();renderLib(libraryData.filter(e=>e.ref_code.toLowerCase().includes(t)||e.project_name.toLowerCase().includes(t)));}
+        async function delEst(id){if(confirm("Delete?"))await supabase.from('estimates').delete().eq('id',id);openLibrary();}
+        function loadEst(id){const d=libraryData.find(e=>e.id===id).data;currentEstimateId=id;document.getElementById('quoteRef').value=d.ref;document.getElementById('projName').value=d.proj;if(d.client)document.getElementById('clientName').value=d.client;document.getElementById('quoteDate').value=d.date;document.getElementById('colAddr').value=d.addresses.col;document.getElementById('siteAddr').value=d.addresses.site;document.getElementById('siteNotes').value=d.addresses.siteNotes;document.getElementById('specificNotes').value=d.addresses.notes;for(const[k,v] of Object.entries(d.inputs)){const el=document.getElementById(k);if(el){if(el.type==='checkbox')el.checked=v;else el.value=v;}}document.getElementById('custom-rows-container').innerHTML='';d.rows.forEach(r=>{document.getElementById('custom-rows-container').insertAdjacentHTML('beforeend',`<tr class="text-xs border-b group border-black dark:border-gray-600"><td class="p-0"><textarea class="cell-input left">${r.desc}</textarea></td><td class="p-0"><input type="number" class="custom-qty cell-input" value="${r.qty}" oninput="calc()"></td><td class="p-0"><input type="number" class="custom-rate cell-input" value="${r.rate}" oninput="calc()"></td><td class="text-center custom-total">0.0</td><td class="border-none text-center"><button onclick="this.closest('tr').remove();calc()" class="text-red-500 opacity-0 group-hover:opacity-100">x</button></td></tr>`);});document.getElementById('library-view').classList.add('hidden');calc();showToast("Loaded");}
+        async function saveEstimate(mode){const r=document.getElementById('quoteRef').value||"Draft";const p=document.getElementById('projName').value||"Untitled";const d={ref:r,proj:p,client:document.getElementById('clientName').value,date:document.getElementById('quoteDate').value,total:document.getElementById('finalTotal').innerText,rows:[],inputs:{},addresses:{col:document.getElementById('colAddr').value,site:document.getElementById('siteAddr').value,notes:document.getElementById('specificNotes').value,siteNotes:document.getElementById('siteNotes').value}};document.querySelectorAll('#custom-rows-container tr').forEach(tr=>d.rows.push({desc:tr.querySelector('textarea').value,qty:tr.querySelector('.custom-qty').value,rate:tr.querySelector('.custom-rate').value}));document.querySelectorAll('input').forEach(el=>{if(el.id)d.inputs[el.id]=el.type==='checkbox'?el.checked:el.value;});if(mode==='update'&&currentEstimateId)await supabase.from('estimates').update({ref_code:r,project_name:p,data:d}).eq('id',currentEstimateId);else{const{data}=await supabase.from('estimates').insert({ref_code:r,project_name:p,data:d}).select();if(data)currentEstimateId=data[0].id;}showToast("Saved");}
     </script>
 </body>
 </html>
