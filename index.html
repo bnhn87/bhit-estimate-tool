@@ -856,4 +856,147 @@
                 ref: document.getElementById('quoteRef').value,
                 proj: p,
                 client: document.getElementById('clientName').value,
-                date: document.getElementById('quoteDate').va
+                date: document.getElementById('quoteDate').value,
+                total: document.getElementById('finalTotal').innerText,
+                rows: [],
+                inputs: {},
+                addresses: {
+                    col: document.getElementById('colAddr').value,
+                    site: document.getElementById('siteAddr').value,
+                    notes: document.getElementById('specificNotes').value,
+                    siteNotes: document.getElementById('siteNotes').value
+                }
+            };
+
+            document.querySelectorAll('#custom-rows-container tr').forEach(tr => d.rows.push({
+                desc: tr.querySelector('textarea')?.value || "",
+                qty: tr.querySelector('.custom-qty')?.value || "",
+                rate: tr.querySelector('.custom-rate')?.value || ""
+            }));
+
+            document.querySelectorAll('input').forEach(el => {
+                if (!el.id) return;
+                d.inputs[el.id] = el.type === 'checkbox' ? el.checked : el.value;
+            });
+
+            if (!supabase) {
+                showToast("No DB – estimate not saved to cloud");
+                return;
+            }
+
+            if (m === 'update' && currentEstimateId) {
+                await supabase.from('estimates').update({
+                    ref_code: d.ref,
+                    project_name: p,
+                    data: d
+                }).eq('id', currentEstimateId);
+            } else {
+                const { data, error } = await supabase.from('estimates').insert({
+                    ref_code: d.ref,
+                    project_name: p,
+                    data: d
+                }).select();
+                if (!error && data && data[0]) currentEstimateId = data[0].id;
+            }
+            showToast("Saved");
+        }
+
+        function openPasteFromGPT() { 
+            document.getElementById('paste-modal').classList.remove('hidden'); 
+        }
+
+        function processPaste() {
+            const txt = document.getElementById('paste-area').value;
+            const rows = txt.split(/\r?\n/);
+            rows.forEach(row => {
+                if (!row.trim()) return;
+                const cols = row.split('|');
+                if (cols.length >= 1) addItemRow(cols[0].trim(), cols[1]?.trim() || 1, cols[2]?.trim() || 0);
+            });
+            document.getElementById('paste-modal').classList.add('hidden');
+            calc();
+        }
+
+        function toggleAdmin() {
+            const modal = document.getElementById('admin-modal');
+            modal.classList.toggle('hidden');
+            if (!modal.classList.contains('hidden')) renderAdmin();
+        }
+        
+        function renderAdmin() {
+            document.getElementById('cfg-logo').value = config.logo || "";
+            document.getElementById('cfg-terms').value = config.terms || "";
+            document.getElementById('cfg-globals').innerHTML = config.globals.map(g => `
+                <div class="flex justify-between items-center text-xs">
+                    <span class="w-1/2">${g.label}</span>
+                    <input type="number" id="adm_g_${g.id}" value="${g.val}" class="border w-16 text-center">
+                </div>`).join('');
+            
+            const ren = (arr, idPrefix, target) => {
+                document.getElementById(target).innerHTML = arr.map((item, idx) => `
+                    <div class="grid grid-cols-[3fr_1fr_20px] gap-1 items-center mb-1 text-xs">
+                        <input type="text" id="${idPrefix}_lbl_${idx}" value="${item.label}" class="border p-1">
+                        <input type="number" id="${idPrefix}_val_${idx}" value="${item.val}" class="border p-1 text-center">
+                        <button onclick="config.${target.replace('cfg-','')}.splice(${idx},1); renderAdmin();" class="text-red-500">x</button>
+                    </div>`).join('');
+            };
+            
+            ren(config.labour, 'adm_l', 'cfg-labour');
+            ren(config.vehicles, 'adm_v', 'cfg-vehicles');
+            ren(config.tasks, 'adm_t', 'cfg-tasks');
+            ren(config.expenses, 'adm_e', 'cfg-expenses');
+        }
+
+        function addConfigRow(type) {
+            config[type].push({ 
+                id: Math.random().toString(36).substr(2, 5), 
+                label: "New Item", 
+                val: 0, 
+                type: type === 'tasks' ? 'hrs' : 'fixed' 
+            });
+            renderAdmin();
+        }
+
+        async function saveConfig() {
+            config.logo = document.getElementById('cfg-logo').value;
+            config.terms = document.getElementById('cfg-terms').value;
+            
+            config.globals.forEach(g => g.val = parseFloat(document.getElementById(`adm_g_${g.id}`).value) || g.val);
+            
+            const read = (arr, prefix) => arr.forEach((item, idx) => {
+                item.label = document.getElementById(`${prefix}_lbl_${idx}`).value;
+                item.val = parseFloat(document.getElementById(`${prefix}_val_${idx}`).value) || 0;
+            });
+            
+            read(config.labour, 'adm_l');
+            read(config.vehicles, 'adm_v');
+            read(config.tasks, 'adm_t');
+            read(config.expenses, 'adm_e');
+            
+            if (supabase) {
+                await supabase.from('app_settings').upsert({ id: 1, config: config });
+                document.getElementById('db-status').className = "w-2.5 h-2.5 rounded-full bg-green-500";
+                document.getElementById('db-text').innerText = "Cloud Connected";
+            } else {
+                console.warn("No DB – config only stored locally in memory");
+            }
+
+            renderMainSheet();
+            calc();
+            toggleAdmin();
+            showToast("Config Saved");
+        }
+
+        function showToast(m) { 
+            const x = document.getElementById("toast");
+            x.innerText = m;
+            x.className = "show";
+            setTimeout(() => x.className = x.className.replace("show",""), 3000); 
+        }
+
+        function newEstimate() { 
+            if (confirm("Clear?")) location.reload(); 
+        }
+    </script>
+</body>
+</html>
