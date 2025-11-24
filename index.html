@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BH Installation Estimate Tool v14</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <style>
+        body { font-family: 'Arial', sans-serif; background-color: #f3f4f6; color: #000; }
+        
+        /* SHEET CONTAINER */
+        .sheet-container { 
+            border: 2px solid #000; 
+            background: #fff; 
+            max-width: 1300px; 
+            margin: 0 auto; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+            margin-bottom: 2rem;
+        }
+
+        /* STRICT TABLES */
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        th, td { border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; font-size: 12px; vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        td:last-child, th:last-child { border-right: none; }
+        
+        /* INPUTS WITHIN CELLS */
+        .cell-input { width: 100%; height: 100%; background: transparent; outline: none; text-align: center; font-family: inherit; font-size: inherit; }
+        .cell-input.left { text-align: left; padding-left: 4px; }
+        .cell-input:focus { background-color: #eef2ff; }
+
+        /* AUTO-EXPAND TEXTAREA SPECIFICS */
+        textarea.cell-input {
+            resize: none;
+            overflow: hidden;
+            min-height: 1.2em;
+            display: block;
+            white-space: pre-wrap; /* Wrap on spaces */
+            word-break: normal;    /* Do not break words in middle */
+            overflow-wrap: break-word; /* Break only if word is too long for line */
+            line-height: 1.2;
+            padding-top: 2px;
+        }
+
+        /* COLORS */
+        .bg-hdr-grey { background-color: #e5e7eb; font-weight: bold; }
+        .bg-hdr-green { background-color: #d1fae5; font-weight: bold; text-align: center; }
+        .bg-hdr-blue { background-color: #dbeafe; font-weight: bold; }
+        .bg-row-blue { background-color: #dbeafe; }
+        .bg-row-yellow { background-color: #fef3c7; }
+        .bg-total-orange { background-color: #fed7aa; }
+        
+        /* ADMIN PANEL (Dark Mode) */
+        .admin-modal { background-color: #1a1b26; color: white; }
+        .admin-header { font-weight: bold; font-size: 1.1rem; margin-bottom: 0.5rem; border-bottom: 1px solid #374151; padding-bottom: 4px; display: flex; justify-content: space-between; align-items: center;}
+        
+        .admin-row { display: grid; grid-template-columns: 1fr 100px 80px 30px; gap: 8px; align-items: center; background: #24283b; padding: 6px; border-radius: 4px; margin-bottom: 6px; border: 1px solid #374151; }
+        
+        .admin-input-text { background: #111827; border: 1px solid #374151; color: white; padding: 4px; border-radius: 4px; width: 100%; }
+        .admin-input-num { background: #111827; border: 1px solid #374151; color: white; text-align: right; padding: 4px; border-radius: 4px; width: 100%; }
+        .admin-select { background: #111827; border: 1px solid #374151; color: #9ca3af; padding: 4px; border-radius: 4px; font-size: 0.75rem; }
+        .admin-btn-del { color: #ef4444; font-weight: bold; cursor: pointer; text-align: center; }
+        
+        .admin-btn-add { background: #374151; font-size: 0.8rem; padding: 2px 8px; rounded: 4px; cursor: pointer; }
+        
+        /* PRINT / PDF SPECIFICS */
+        .pdf-page-break { page-break-before: always; border-top: 2px solid #000; margin-top: 20px; padding-top: 40px; }
+        .hidden-on-screen { display: none; }
+        .visible-on-pdf { display: block !important; }
+
+        @media print {
+            body { background: white; margin: 0; }
+            .no-print { display: none !important; }
+            .sheet-container { box-shadow: none; margin: 0; width: 100%; max-width: none; border: none; }
+            input, textarea, select { border: none; background: transparent; resize: none; appearance: none; }
+            /* Fix for textarea content in print */
+            textarea { height: auto; overflow: visible; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
+    </style>
+</head>
+<body class="p-4">
+
+    <div class="max-w-[1300px] mx-auto flex justify-between items-center mb-4 no-print bg-white p-3 rounded shadow">
+        <div>
+            <h1 class="text-xl font-bold text-gray-800">BH Installation Estimate Generator v14</h1>
+            <p class="text-xs text-gray-500">Auto-expanding Item Boxes & Sunday Calc</p>
+        </div>
+        <div class="space-x-2">
+            <button onclick="toggleAdmin()" class="bg-gray-800 hover:bg-black text-white px-4 py-1.5 rounded text-sm font-bold shadow">⚙️ Admin Configuration</button>
+            <button onclick="generateExcel()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded text-sm font-bold shadow">Download Excel</button>
+            <button onclick="generatePDF()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm font-bold shadow">Download PDF</button>
+        </div>
+    </div>
+
+    <div id="ui-container" class="sheet-container">
+        
+        <div id="page-1">
+            <div class="text-center py-4 border-b-2 border-black">
+                <h1 class="text-3xl font-bold text-gray-900">BH Installation & Transport</h1>
+            </div>
+
+            <div class="grid grid-cols-[1fr_2fr_1fr_1fr] border-b-2 border-black">
+                <div class="p-2 border-r border-black bg-hdr-grey text-xs flex items-center font-bold">Estimate ref:</div>
+                <div class="p-0 border-r border-black"><input type="text" id="quoteRef" class="cell-input left font-bold" placeholder="Ref..."></div>
+                <div class="p-2 border-r border-black bg-hdr-grey text-xs flex items-center justify-end font-bold">Estimate date:</div>
+                <div class="p-0"><input type="date" id="quoteDate" class="cell-input px-2 text-right"></div>
+            </div>
+            <div class="grid grid-cols-[1fr_2fr_2fr] border-b-2 border-black">
+                <div class="p-2 border-r border-black bg-hdr-grey text-xs flex items-center font-bold">Project:</div>
+                <div class="p-0 border-r border-black"><input type="text" id="projName" class="cell-input left font-bold" placeholder="Project Name"></div>
+                <div class="flex">
+                    <div class="bg-total-orange font-bold text-xs p-2 flex items-center border-r border-black flex-grow">Estimate valid to (90 days):</div>
+                    <div class="font-bold text-xs p-2 bg-white min-w-[120px] text-center flex items-center justify-center" id="validDate"></div>
+                </div>
+            </div>
+
+            <div class="flex">
+                <div class="w-5/12 border-r-2 border-black flex flex-col">
+                    <table class="w-full">
+                        <colgroup><col style="width: 50%"><col style="width: 15%"><col style="width: 20%"><col style="width: 15%"></colgroup>
+                        <thead>
+                            <tr class="text-xs">
+                                <th class="bg-hdr-blue">Items</th>
+                                <th class="bg-hdr-green">QTY</th>
+                                <th class="bg-hdr-green">HRS/Piece</th>
+                                <th class="bg-hdr-green">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="custom-rows-container">
+                            </tbody>
+                    </table>
+                    <div class="no-print p-1 border-b border-black text-center bg-gray-50">
+                        <button onclick="addItemRow()" class="text-[10px] bg-blue-600 text-white px-4 py-1 rounded font-bold hover:bg-blue-700">+ Add Item Row</button>
+                    </div>
+
+                    <table class="w-full border-b-2 border-black">
+                        <colgroup><col style="width: 50%"><col style="width: 15%"><col style="width: 20%"><col style="width: 15%"></colgroup>
+                        <tbody id="fixed-tasks-container" class="text-xs"></tbody>
+                    </table>
+
+                    <div class="grid grid-cols-[1fr_60px] border-b border-black">
+                        <div class="p-2 border-r border-black text-right font-bold bg-gray-100 text-sm flex items-center justify-end">Total Hours</div>
+                        <div class="p-2 text-center font-bold text-lg flex items-center justify-center" id="grandTotalHrs">0.0</div>
+                    </div>
+                    <div class="grid grid-cols-[1fr_60px] border-b-2 border-black">
+                        <div class="p-2 border-r border-black text-right text-xs bg-gray-200 flex items-center justify-end">Labour in Days (<span id="lbl_dayHrs">7.25</span>hr)</div>
+                        <div class="p-2 text-center font-bold text-lg flex items-center justify-center" id="grandTotalDays">0.00</div>
+                    </div>
+
+                    <div class="flex-grow flex flex-col min-h-[150px] bg-row-blue">
+                        <div class="p-2 font-bold text-center border-b border-black text-sm">Days Required on site / Notes</div>
+                        <textarea class="w-full flex-grow bg-transparent p-2 resize-none text-sm placeholder-gray-500" placeholder="Enter notes here..."></textarea>
+                    </div>
+                </div>
+
+                <div class="w-7/12 flex flex-col">
+                    <div class="flex h-32 border-b-2 border-black">
+                        <div class="w-1/2 border-r-2 border-black bg-row-blue flex flex-col">
+                            <div class="text-xs text-center p-1 border-b border-black">Collection Address</div>
+                            <div class="flex-grow flex items-center justify-center p-2 text-center text-sm font-bold">
+                                <textarea class="w-full h-full bg-transparent text-center resize-none"></textarea>
+                            </div>
+                        </div>
+                        <div class="w-1/2 bg-row-blue flex flex-col">
+                            <div class="text-xs text-center p-1 border-b border-black">Site / Delivery Address</div>
+                            <div class="flex-grow p-2">
+                                <textarea id="siteAddr" class="w-full h-full bg-transparent text-center resize-none placeholder-gray-500 font-bold" placeholder="Enter Site Address..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-row-yellow border-b-2 border-black p-2 h-20">
+                        <textarea class="w-full h-full bg-transparent resize-none text-xs placeholder-gray-600 text-blue-900" placeholder="Site specific notes..."></textarea>
+                    </div>
+
+                    <table class="w-full border-b border-black">
+                        <colgroup><col style="width: 40%"><col style="width: 15%"><col style="width: 15%"><col style="width: 15%"><col style="width: 15%"></colgroup>
+                        <thead><tr class="text-xs bg-hdr-grey font-bold"><th>Role</th><th>Installers</th><th>Cost/Day</th><th>Days</th><th>Total</th></tr></thead>
+                        <tbody id="labour-rows" class="text-xs"></tbody>
+                    </table>
+
+                    <table class="w-full border-b border-black">
+                        <colgroup><col style="width: 55%"><col style="width: 15%"><col style="width: 15%"><col style="width: 15%"></colgroup>
+                        <tbody id="expenses-rows" class="text-xs"></tbody>
+                    </table>
+
+                    <table class="w-full border-b border-black">
+                        <colgroup><col style="width: 25%"><col style="width: 20%"><col style="width: 15%"><col style="width: 20%"><col style="width: 20%"></colgroup>
+                        <thead><tr class="text-xs bg-hdr-grey font-bold"><th>Size</th><th>Cost</th><th>Qty</th><th>Area</th><th>Total</th></tr></thead>
+                        <tbody id="veh-rows" class="text-xs"></tbody>
+                    </table>
+
+                    <div class="flex flex-grow">
+                        <div class="w-7/12 border-r-2 border-black flex flex-col text-xs" id="globals-rows"></div>
+                        <div class="w-5/12 bg-total-orange flex flex-col justify-end">
+                            <div class="flex justify-between items-center p-2 border-b border-black">
+                                <span class="font-bold text-lg">Estimate Total</span>
+                                <span class="font-bold text-xl" id="finalTotal">£0.00</span>
+                            </div>
+                            <div class="flex justify-between items-center p-2 border-b border-black text-xs font-bold text-gray-700">
+                                <span>OOH Total (x<span id="lbl_ooh">1.6</span>)</span>
+                                <span id="oohTotal">£0.00</span>
+                            </div>
+                            <div class="flex justify-between items-center p-2 border-b border-black text-xs font-bold text-gray-700">
+                                <span>Saturday Total (x<span id="lbl_sat">1.75</span>)</span>
+                                <span id="satTotal">£0.00</span>
+                            </div>
+                            <div class="flex justify-between items-center p-2 text-xs font-bold text-gray-700">
+                                <span>Sunday Total (x<span id="lbl_sun">2.0</span>)</span>
+                                <span id="sunTotal">£0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t-2 border-black flex">
+                <div class="w-8/12 p-2 text-[10px] leading-tight border-r-2 border-black">
+                    <strong>Note:</strong> T&Cs are attached on the following page.
+                </div>
+                <div class="w-4/12 flex flex-col">
+                    <div class="text-[10px] font-bold text-center border-b border-black p-1 bg-gray-100">Estimate Issued By</div>
+                    <div class="flex-grow flex items-center justify-center p-2">
+                        <input type="text" value="Ben Hone" class="text-center font-bold text-xl w-full">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-2" class="hidden-on-screen p-12 bg-white">
+            <h2 class="text-2xl font-bold border-b-2 border-black pb-4 mb-6">Terms & Conditions of Business</h2>
+            <div id="terms-display" class="text-sm text-justify whitespace-pre-wrap leading-relaxed"></div>
+        </div>
+    </div>
+
+    <div id="admin-view" class="hidden fixed inset-0 bg-gray-900 bg-opacity-95 overflow-y-auto p-4 z-50 flex items-center justify-center">
+        <div class="admin-modal rounded-lg shadow-2xl p-8 w-[1000px] border border-gray-700 h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4 border-b border-gray-600 pb-2">
+                <h2 class="text-2xl font-bold text-white">Admin Configuration</h2>
+                <button onclick="toggleAdmin()" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded">Cancel / Close</button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-8 overflow-y-auto flex-grow pr-2">
+                <div>
+                    <div class="mb-6">
+                        <div class="admin-header text-blue-400"><span>Labour & Operational Rates</span><button class="admin-btn-add text-white" onclick="addNewRow('labour')">+ Add</button></div>
+                        <div id="adm-labour-list"></div>
+                    </div>
+                    <div class="mb-6">
+                        <div class="admin-header text-purple-400"><span>Scope Items (Hrs)</span><button class="admin-btn-add text-white" onclick="addNewRow('tasks')">+ Add</button></div>
+                        <div id="adm-tasks-list"></div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="mb-6">
+                        <div class="admin-header text-green-400"><span>Vehicles</span><button class="admin-btn-add text-white" onclick="addNewRow('vehicles')">+ Add</button></div>
+                        <div id="adm-vehicles-list"></div>
+                    </div>
+                    <div class="mb-6">
+                        <div class="admin-header text-red-400"><span>Expenses / Charges</span><button class="admin-btn-add text-white" onclick="addNewRow('expenses')">+ Add</button></div>
+                        <div id="adm-expenses-list"></div>
+                    </div>
+                    <div class="mb-6">
+                        <div class="admin-header text-orange-400">Globals & Multipliers</div>
+                        <div id="adm-globals-list"></div>
+                    </div>
+                </div>
+                
+                <div class="col-span-2 mt-4 pt-4 border-t border-gray-600">
+                    <div class="admin-header text-yellow-400">Terms & Conditions (PDF Page 2)</div>
+                    <textarea id="adm-terms-input" class="w-full h-40 bg-[#111827] text-white p-4 rounded border border-gray-600 font-mono text-xs"></textarea>
+                </div>
+            </div>
+
+            <div class="mt-4 pt-4 border-t border-gray-600 flex justify-between items-center">
+                <button onclick="resetDefaults()" class="text-red-400 hover:text-red-300 underline text-sm">Reset to Defaults</button>
+                <button onclick="saveAdmin()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold text-lg px-8 py-3 rounded shadow-lg">Save & Apply Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const DEFAULT_TERMS = `1. All estimates are supplied on the assumption of clear access, use of appropriate size lift, which will accomodate ALL items, for uplift and clear working areas.
+
+2. Waste will be disposed of by a licensed waste carrier and disposed of as per regulations and recycled where possible. Pallets will be returned to the sender or recycled where possible.
+
+3. Any uplift required via stairs, access issues, product changes, phased deliveries, product/delivery split by floor will require a new estimate to be raised to suit.
+
+4. Out Of Hours is considered to be 18:00 - 07:00 Monday to Friday (NOT incl. Bank holidays). Saturday, Sunday & Bank Holiday works will require re-estimating.
+
+5. Parking - Parking will be charged at the value of PCN, UNLESS on-site parking is made available for the duration of the task.`;
+
+        const DEFAULT_CONFIG = {
+            labour: [
+                { id: 'l1', label: "Installer + Veh", val: 325, type: 'day' },
+                { id: 'l2', label: "2 Person Team", val: 550, type: 'day' },
+                { id: 'l3', label: "Installer On Foot", val: 185, type: 'day' },
+                { id: 'l4', label: "Supervisor", val: 220, type: 'day' },
+                { id: 'l5', label: "Custom/Snag", val: 750, type: 'day' }
+            ],
+            vehicles: [
+                { id: 'v1', label: "SWB Van", val: 170, type: 'fixed' },
+                { id: 'v2', label: "XLWB Van", val: 200, type: 'fixed' },
+                { id: 'v3', label: "Luton Van", val: 230, type: 'fixed' },
+                { id: 'v4', label: "7.5T Truck", val: 540, type: 'fixed' },
+                { id: 'v5', label: "18T Truck", val: 720, type: 'fixed' }
+            ],
+            tasks: [
+                { id: 't1', label: "Standard Uplift", val: 0.3, type: 'hrs' },
+                { id: 't2', label: "Unwrap/Level", val: 0.2, type: 'hrs' },
+                { id: 't3', label: "Extended Uplift", val: 0.5, type: 'hrs_check' }, 
+                { id: 't4', label: "Stairs (per Item)", val: 0.1, type: 'hrs_check' }
+            ],
+            expenses: [
+                { id: 'e1', label: "Additional Miles", val: 0.90, type: 'fixed' },
+                { id: 'e2', label: "Waste Disposal", val: 340, type: 'fixed' },
+                { id: 'e3', label: "ULEZ/City Charge", val: 15, type: 'fixed' },
+                { id: 'e4', label: "Parking Cost", val: 75, type: 'day' }
+            ],
+            globals: [
+                { id: 'g1', label: "Working Day Hours", val: 7.25 },
+                { id: 'g2', label: "OOH Multiplier", val: 1.6 },
+                { id: 'g3', label: "Sat Multiplier", val: 1.75 },
+                { id: 'g4', label: "Sun Multiplier", val: 2.0 }
+            ],
+            terms: DEFAULT_TERMS
+        };
+
+        let config = JSON.parse(localStorage.getItem('bh_est_config_v14')) || DEFAULT_CONFIG;
+        if(!config.globals.find(g => g.id === 'g4')) {
+            config.globals.push({ id: 'g4', label: "Sun Multiplier", val: 2.0 });
+        }
+
+        window.onload = function() {
+            addItemRow();
+            renderMainSheet();
+            const d = new Date(); 
+            document.getElementById('quoteDate').valueAsDate = d;
+            d.setDate(d.getDate() + 90);
+            document.getElementById('validDate').innerText = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+            calc();
+        };
+
+        function autoResize(el) {
+            el.style.height = 'auto';
+            el.style.height = el.scrollHeight + 'px';
+        }
+
+        function renderMainSheet() {
+            const tContainer = document.getElementById('fixed-tasks-container');
+            tContainer.innerHTML = '';
+            config.tasks.forEach(t => {
+                if(t.type === 'hrs') {
+                    tContainer.innerHTML += `<tr><td class="bg-gray-50">${t.label}</td><td class="p-0"><input type="number" id="qty_${t.id}" class="cell-input" oninput="calc()"></td><td class="text-center text-gray-500">${t.val}</td><td class="text-center font-bold" id="tot_${t.id}">0.0</td></tr>`;
+                } else if (t.type === 'hrs_check') {
+                    tContainer.innerHTML += `<tr class="bg-row-yellow"><td colspan="3" class="font-bold flex items-center gap-2"><input type="checkbox" id="chk_${t.id}" onchange="calc()" class="w-4 h-4">${t.label} (+${t.val} hr/item)</td><td class="text-center font-bold" id="tot_${t.id}">0.0</td></tr>`;
+                }
+            });
+
+            const lContainer = document.getElementById('labour-rows');
+            lContainer.innerHTML = '';
+            config.labour.forEach(l => {
+                lContainer.innerHTML += `<tr><td class="bg-gray-50 pl-2">${l.label}</td><td class="p-0"><input type="number" id="qty_${l.id}" class="cell-input" oninput="calc()"></td><td class="text-center">£${l.val}</td><td class="p-0"><input type="number" id="days_${l.id}" class="cell-input" oninput="calc()"></td><td class="text-right pr-2 font-bold" id="tot_${l.id}">£0.00</td></tr>`;
+            });
+
+            const eContainer = document.getElementById('expenses-rows');
+            eContainer.innerHTML = '';
+            const gContainer = document.getElementById('globals-rows');
+            gContainer.innerHTML = '';
+
+            config.expenses.forEach(e => {
+                if (e.label.includes("Parking") || e.label.includes("ULEZ") || e.label.includes("City")) {
+                     gContainer.innerHTML += `<div class="grid grid-cols-[2fr_1fr_1fr] border-b border-black items-center h-8 ${e.label.includes('Parking') ? 'bg-gray-50' : ''}"><div class="px-2 font-bold flex items-center h-full">${e.label}</div><div class="p-0 h-full border-l border-black"><input type="number" id="qty_${e.id}" value="1" class="cell-input" oninput="calc()"></div><div class="px-2 text-right h-full flex items-center justify-end border-l border-black" id="tot_${e.id}">£0.00</div></div>`;
+                } else {
+                    eContainer.innerHTML += `<tr><td class="font-bold pl-2">${e.label}</td><td class="p-0"><input type="number" id="qty_${e.id}" class="cell-input" oninput="calc()"></td><td class="text-center">£${e.val}</td><td class="text-right pr-2" id="tot_${e.id}">£0.00</td></tr>`;
+                }
+            });
+
+            const vContainer = document.getElementById('veh-rows');
+            vContainer.innerHTML = '';
+            config.vehicles.forEach(v => {
+                vContainer.innerHTML += `<tr><td class="bg-gray-50 pl-2 text-center">${v.label}</td><td class="text-center">£${v.val}</td><td class="p-0"><input type="number" id="qty_${v.id}" class="cell-input" oninput="calc()"></td><td class="text-center text-gray-500">London</td><td class="text-right pr-2 font-bold" id="tot_${v.id}">£0.00</td></tr>`;
+            });
+
+            document.getElementById('terms-display').innerText = config.terms;
+            document.getElementById('lbl_dayHrs').innerText = config.globals.find(g=>g.id==='g1').val;
+            document.getElementById('lbl_ooh').innerText = config.globals.find(g=>g.id==='g2').val;
+            document.getElementById('lbl_sat').innerText = config.globals.find(g=>g.id==='g3').val;
+            document.getElementById('lbl_sun').innerText = config.globals.find(g=>g.id==='g4').val;
+        }
+
+        function calc() {
+            const val = (id) => parseFloat(document.getElementById(id)?.value) || 0;
+            const setTxt = (id, v) => { if(document.getElementById(id)) document.getElementById(id).innerText = v; };
+
+            let totalCustomQty = 0;
+            let totalHrs = 0;
+
+            document.querySelectorAll('.custom-qty').forEach((q, i) => {
+                const qty = parseFloat(q.value)||0;
+                totalCustomQty += qty;
+                const r = document.querySelectorAll('.custom-rate')[i];
+                const t = document.querySelectorAll('.custom-total')[i];
+                const line = qty * (parseFloat(r.value)||0);
+                t.innerText = line ? line.toFixed(1) : "";
+                totalHrs += line;
+            });
+
+            config.tasks.forEach(t => {
+                let lineHrs = 0;
+                if(t.type === 'hrs') lineHrs = val(`qty_${t.id}`) * t.val;
+                else if (t.type === 'hrs_check') if(document.getElementById(`chk_${t.id}`)?.checked) lineHrs = totalCustomQty * t.val;
+                setTxt(`tot_${t.id}`, lineHrs.toFixed(1));
+                totalHrs += lineHrs;
+            });
+
+            const dayHrs = config.globals.find(g=>g.id==='g1').val;
+            setTxt('grandTotalHrs', totalHrs.toFixed(1));
+            setTxt('grandTotalDays', (totalHrs / dayHrs).toFixed(2));
+
+            let totalMoney = 0;
+            const processMoneyItem = (item) => {
+                let lineCost = 0;
+                const qty = val(`qty_${item.id}`);
+                if(item.type === 'day') {
+                    const daysInput = document.getElementById(`days_${item.id}`);
+                    const days = daysInput ? parseFloat(daysInput.value)||0 : 1; 
+                    lineCost = qty * days * item.val;
+                } else {
+                    lineCost = qty * item.val;
+                }
+                setTxt(`tot_${item.id}`, `£${lineCost.toFixed(2)}`);
+                totalMoney += lineCost;
+            };
+
+            config.labour.forEach(processMoneyItem);
+            config.vehicles.forEach(processMoneyItem);
+            config.expenses.forEach(processMoneyItem);
+
+            const oohMult = config.globals.find(g=>g.id==='g2').val;
+            const satMult = config.globals.find(g=>g.id==='g3').val;
+            const sunMult = config.globals.find(g=>g.id==='g4').val;
+            
+            setTxt('finalTotal', `£${totalMoney.toFixed(2)}`);
+            setTxt('oohTotal', `£${(totalMoney * oohMult).toFixed(2)}`);
+            setTxt('satTotal', `£${(totalMoney * satMult).toFixed(2)}`);
+            setTxt('sunTotal', `£${(totalMoney * sunMult).toFixed(2)}`);
+        }
+
+        function addItemRow() {
+            const c = document.getElementById('custom-rows-container');
+            c.insertAdjacentHTML('beforeend', `
+            <tr class="text-xs border-b border-black">
+                <td class="p-0">
+                    <textarea class="cell-input left" rows="1" placeholder="..." oninput="autoResize(this)"></textarea>
+                </td>
+                <td class="p-0"><input type="number" class="custom-qty cell-input" value="1" oninput="calc()"></td>
+                <td class="p-0"><input type="number" class="custom-rate cell-input" oninput="calc()"></td>
+                <td class="text-center custom-total">0.0</td>
+            </tr>`);
+        }
+
+        function toggleAdmin() {
+            const el = document.getElementById('admin-view');
+            if(el.classList.contains('hidden')) { renderAdminPanel(); el.classList.remove('hidden'); } else { el.classList.add('hidden'); }
+        }
+
+        function renderAdminPanel() {
+            const renderSection = (containerId, arrName) => {
+                const c = document.getElementById(containerId);
+                c.innerHTML = '';
+                config[arrName].forEach((item, index) => {
+                    if(arrName === 'globals') {
+                        c.innerHTML += `<div class="admin-row"><span class="text-sm text-gray-300 col-span-2">${item.label}</span><input type="number" class="admin-input-num" value="${item.val}" onchange="updateConfigVal('${arrName}', ${index}, 'val', this.value)"><span></span></div>`;
+                        return;
+                    }
+                    c.innerHTML += `<div class="admin-row"><input type="text" class="admin-input-text" value="${item.label}" onchange="updateConfigVal('${arrName}', ${index}, 'label', this.value)"><input type="number" class="admin-input-num" value="${item.val}" onchange="updateConfigVal('${arrName}', ${index}, 'val', this.value)"><select class="admin-select" onchange="updateConfigVal('${arrName}', ${index}, 'type', this.value)"><option value="day" ${item.type==='day'?'selected':''}>£/Day</option><option value="fixed" ${item.type==='fixed'?'selected':''}>£ Fixed</option><option value="hrs" ${item.type==='hrs'?'selected':''}>Hrs</option><option value="hrs_check" ${item.type==='hrs_check'?'selected':''}>Hrs(Chk)</option></select><div class="admin-btn-del" onclick="removeRow('${arrName}', ${index})">✕</div></div>`;
+                });
+            };
+            renderSection('adm-labour-list', 'labour');
+            renderSection('adm-tasks-list', 'tasks');
+            renderSection('adm-vehicles-list', 'vehicles');
+            renderSection('adm-expenses-list', 'expenses');
+            renderSection('adm-globals-list', 'globals');
+            
+            document.getElementById('adm-terms-input').value = config.terms;
+        }
+
+        function updateConfigVal(arr, idx, field, val) {
+            if(field === 'val') val = parseFloat(val);
+            config[arr][idx][field] = val;
+        }
+
+        function addNewRow(arr) {
+            const id = Date.now().toString().slice(-4);
+            let type = arr === 'labour' ? 'day' : (arr === 'tasks' ? 'hrs' : 'fixed');
+            config[arr].push({ id: id, label: "New Item", val: 0, type: type });
+            renderAdminPanel();
+        }
+
+        function removeRow(arr, idx) { config[arr].splice(idx, 1); renderAdminPanel(); }
+
+        function saveAdmin() {
+            config.terms = document.getElementById('adm-terms-input').value;
+            localStorage.setItem('bh_est_config_v14', JSON.stringify(config));
+            toggleAdmin();
+            renderMainSheet();
+            calc();
+        }
+        
+        function resetDefaults() { if(confirm("Reset?")) { localStorage.removeItem('bh_est_config_v14'); location.reload(); } }
+
+        function generatePDF() {
+            const el = document.getElementById('ui-container');
+            const page2 = document.getElementById('page-2');
+            
+            page2.classList.remove('hidden-on-screen');
+            page2.classList.add('pdf-page-break');
+            
+            const btns = document.querySelectorAll('.no-print');
+            btns.forEach(b => b.style.display = 'none');
+            
+            html2pdf().set({
+                margin: 0.2,
+                filename: `BH_Estimate_${document.getElementById('quoteRef').value || 'Draft'}.pdf`,
+                image: { type: 'jpeg', quality: 1 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+            }).from(el).save().then(() => {
+                 btns.forEach(b => b.style.display = '');
+                 page2.classList.add('hidden-on-screen'); 
+                 page2.classList.remove('pdf-page-break');
+            });
+        }
+        
+        function generateExcel() { alert('Excel export not available in preview.'); }
+    </script>
+</body>
+</html>
