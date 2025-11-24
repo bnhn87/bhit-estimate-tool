@@ -12,31 +12,86 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
-        body { font-family: 'Arial', sans-serif; background-color: #f3f4f6; color: #000; }
+        /* BASE THEME (LIGHT) */
+        :root {
+            --bg-body: #f3f4f6;
+            --bg-sheet: #ffffff;
+            --text-main: #000000;
+            --border-main: #000000;
+            --input-focus: #eef2ff;
+            
+            /* Headers */
+            --bg-hdr-grey: #e5e7eb;
+            --bg-hdr-green: #d1fae5;
+            --bg-hdr-blue: #dbeafe;
+            --bg-row-blue: #dbeafe;
+            --bg-row-yellow: #fef3c7;
+            --bg-total-orange: #fed7aa;
+        }
+
+        /* DARK THEME OVERRIDES */
+        body.dark {
+            --bg-body: #111827; /* Gray 900 */
+            --bg-sheet: #1f2937; /* Gray 800 */
+            --text-main: #e5e7eb; /* Gray 200 */
+            --border-main: #4b5563; /* Gray 600 */
+            --input-focus: #374151;
+            
+            /* Headers (Muted for Dark Mode) */
+            --bg-hdr-grey: #374151;
+            --bg-hdr-green: #064e3b; /* Dark Green */
+            --bg-hdr-blue: #1e3a8a; /* Dark Blue */
+            --bg-row-blue: #1e3a8a;
+            --bg-row-yellow: #78350f; /* Dark Amber */
+            --bg-total-orange: #7c2d12; /* Dark Orange */
+        }
+
+        body { font-family: 'Arial', sans-serif; background-color: var(--bg-body); color: var(--text-main); transition: background-color 0.3s, color 0.3s; }
         
         /* SHEET CONTAINER */
-        .sheet-container { border: 2px solid #000; background: #fff; max-width: 1300px; margin: 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 2rem; }
+        .sheet-container { 
+            border: 2px solid var(--border-main); 
+            background: var(--bg-sheet); 
+            max-width: 1300px; 
+            margin: 0 auto; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+            margin-bottom: 2rem; 
+        }
         
         /* TABLE STYLES */
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-        th, td { border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; font-size: 12px; vertical-align: middle; }
+        th, td { border-right: 1px solid var(--border-main); border-bottom: 1px solid var(--border-main); padding: 4px; font-size: 12px; vertical-align: middle; }
         tr:last-child td { border-bottom: none; }
         td:last-child, th:last-child { border-right: none; }
         
-        /* INPUTS */
-        .cell-input { width: 100%; height: 100%; background: transparent; outline: none; text-align: center; font-family: inherit; font-size: inherit; }
-        .cell-input.left { text-align: left; padding-left: 4px; }
-        .cell-input:focus { background-color: #eef2ff; }
-        textarea.cell-input { resize: none; overflow: hidden; min-height: 1.2em; display: block; white-space: pre-wrap; line-height: 1.2; padding-top: 2px; }
+        /* BORDERS */
+        .border-b-black { border-bottom-color: var(--border-main) !important; }
+        .border-r-black { border-right-color: var(--border-main) !important; }
+        .border-black { border-color: var(--border-main) !important; }
+        .border-2 { border-width: 2px; }
 
-        /* COLORS */
-        .bg-hdr-grey { background-color: #e5e7eb; font-weight: bold; }
-        .bg-hdr-green { background-color: #d1fae5; font-weight: bold; text-align: center; }
-        .bg-hdr-blue { background-color: #dbeafe; font-weight: bold; }
-        .bg-row-blue { background-color: #dbeafe; }
-        .bg-row-yellow { background-color: #fef3c7; }
-        .bg-total-orange { background-color: #fed7aa; }
+        /* INPUTS */
+        .cell-input { width: 100%; height: 100%; background: transparent; outline: none; text-align: center; font-family: inherit; font-size: inherit; color: var(--text-main); }
+        .cell-input.left { text-align: left; padding-left: 4px; }
+        .cell-input:focus { background-color: var(--input-focus); }
+        textarea.cell-input { resize: none; overflow: hidden; min-height: 1.2em; display: block; white-space: pre-wrap; line-height: 1.2; padding-top: 2px; color: var(--text-main); }
         
+        /* DYNAMIC COLORS */
+        .bg-hdr-grey { background-color: var(--bg-hdr-grey); font-weight: bold; }
+        .bg-hdr-green { background-color: var(--bg-hdr-green); font-weight: bold; text-align: center; }
+        .bg-hdr-blue { background-color: var(--bg-hdr-blue); font-weight: bold; }
+        .bg-row-blue { background-color: var(--bg-row-blue); }
+        .bg-row-yellow { background-color: var(--bg-row-yellow); }
+        .bg-total-orange { background-color: var(--bg-total-orange); }
+        
+        /* Dark Mode Text Fixes for Colored Rows */
+        body.dark .bg-hdr-green, body.dark .bg-hdr-blue, body.dark .bg-row-blue, body.dark .bg-row-yellow, body.dark .bg-total-orange {
+            color: #e5e7eb;
+        }
+        /* Specific inputs in colored rows need white text in dark mode */
+        body.dark input, body.dark textarea { color: #fff; }
+        body.dark ::placeholder { color: #9ca3af; }
+
         /* MODALS */
         .admin-modal { background-color: #1a1b26; color: white; }
         .admin-header { font-weight: bold; font-size: 1.1rem; margin-bottom: 0.5rem; border-bottom: 1px solid #374151; padding-bottom: 4px; display: flex; justify-content: space-between; align-items: center;}
@@ -48,9 +103,9 @@
         .admin-btn-add { background: #374151; font-size: 0.8rem; padding: 2px 8px; rounded: 4px; cursor: pointer; }
         
         /* LIBRARY TABLE */
-        .lib-table th { background-color: #f3f4f6; text-align: left; padding: 8px; border-bottom: 2px solid #ddd; border-right: none; }
-        .lib-table td { border-bottom: 1px solid #eee; padding: 8px; border-right: none; }
-        .lib-row:hover { background-color: #f9fafb; }
+        .lib-table th { background-color: var(--bg-hdr-grey); text-align: left; padding: 8px; border-bottom: 2px solid var(--border-main); border-right: none; color: var(--text-main); }
+        .lib-table td { border-bottom: 1px solid var(--border-main); padding: 8px; border-right: none; color: var(--text-main); }
+        .lib-row:hover { background-color: var(--input-focus); cursor: pointer; }
 
         /* TOAST */
         #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 4px; padding: 16px; position: fixed; z-index: 100; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 14px; }
@@ -63,10 +118,10 @@
         .hidden-on-screen { display: none; }
         .visible-on-pdf { display: block !important; }
         @media print {
-            body { background: white; margin: 0; }
+            body { background: white; margin: 0; color: black; }
             .no-print { display: none !important; }
             .sheet-container { box-shadow: none; margin: 0; width: 100%; max-width: none; border: none; }
-            input, textarea, select { border: none; background: transparent; resize: none; appearance: none; }
+            input, textarea, select { border: none; background: transparent; resize: none; appearance: none; color: black; }
             textarea { height: auto; overflow: visible; }
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         }
@@ -74,11 +129,11 @@
 </head>
 <body class="p-4">
 
-    <div class="max-w-[1300px] mx-auto flex justify-between items-center mb-4 no-print bg-white p-3 rounded shadow">
+    <div class="max-w-[1300px] mx-auto flex justify-between items-center mb-4 no-print bg-white dark:bg-gray-800 p-3 rounded shadow transition-colors duration-300">
         <div class="flex items-center gap-4">
             <div>
-                <h1 class="text-xl font-bold text-gray-800">BH Estimate Tool v21</h1>
-                <p class="text-xs text-gray-500 flex items-center gap-2">
+                <h1 class="text-xl font-bold text-gray-800 dark:text-white">BH Estimate Tool v21</h1>
+                <p class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
                     <span id="db-status" class="w-2 h-2 rounded-full bg-red-500"></span>
                     <span id="db-text">Connecting...</span>
                     <span id="current-file-id" class="hidden text-gray-300"></span>
@@ -86,7 +141,11 @@
             </div>
         </div>
         <div class="space-x-2 flex items-center">
-            <button onclick="newEstimate()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-400 px-4 py-1.5 rounded text-sm font-bold shadow flex items-center gap-2">📄 New Estimate</button>
+            <button onclick="toggleTheme()" class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white border border-gray-400 dark:border-gray-600 px-3 py-1.5 rounded text-sm font-bold shadow" title="Toggle Light/Dark Mode">
+                <span id="theme-icon">🌙</span>
+            </button>
+            <div class="h-6 w-px bg-gray-300 mx-1"></div>
+            <button onclick="newEstimate()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-400 px-4 py-1.5 rounded text-sm font-bold shadow flex items-center gap-2">📄 New</button>
             <div class="h-6 w-px bg-gray-300 mx-1"></div>
             <button onclick="openLibrary()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-1.5 rounded text-sm font-bold shadow flex items-center gap-2">📚 Library</button>
             <button onclick="saveEstimate('update')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm font-bold shadow flex items-center gap-2">💾 Save</button>
@@ -97,24 +156,24 @@
         </div>
     </div>
 
-    <div id="ui-container" class="sheet-container">
+    <div id="ui-container" class="sheet-container transition-colors duration-300">
         <div id="page-1">
             <div class="text-center py-4 border-b-2 border-black">
-                <h1 class="text-3xl font-bold text-gray-900">BH Installation & Transport</h1>
+                <h1 class="text-3xl font-bold">BH Installation & Transport</h1>
             </div>
 
             <div class="grid grid-cols-[1fr_2fr_1fr_1fr] border-b-2 border-black">
-                <div class="p-2 border-r border-black bg-hdr-grey text-xs flex items-center font-bold">Estimate ref:</div>
-                <div class="p-0 border-r border-black"><input type="text" id="quoteRef" class="cell-input left font-bold" placeholder="Ref..."></div>
-                <div class="p-2 border-r border-black bg-hdr-grey text-xs flex items-center justify-end font-bold">Estimate date:</div>
+                <div class="p-2 border-r-black bg-hdr-grey text-xs flex items-center font-bold">Estimate ref:</div>
+                <div class="p-0 border-r-black"><input type="text" id="quoteRef" class="cell-input left font-bold" placeholder="Ref..."></div>
+                <div class="p-2 border-r-black bg-hdr-grey text-xs flex items-center justify-end font-bold">Estimate date:</div>
                 <div class="p-0"><input type="date" id="quoteDate" class="cell-input px-2 text-right"></div>
             </div>
             <div class="grid grid-cols-[1fr_2fr_2fr] border-b-2 border-black">
-                <div class="p-2 border-r border-black bg-hdr-grey text-xs flex items-center font-bold">Project:</div>
-                <div class="p-0 border-r border-black"><input type="text" id="projName" class="cell-input left font-bold" placeholder="Project Name"></div>
+                <div class="p-2 border-r-black bg-hdr-grey text-xs flex items-center font-bold">Project:</div>
+                <div class="p-0 border-r-black"><input type="text" id="projName" class="cell-input left font-bold" placeholder="Project Name"></div>
                 <div class="flex">
-                    <div class="bg-total-orange font-bold text-xs p-2 flex items-center border-r border-black flex-grow">Estimate valid to (90 days):</div>
-                    <div class="font-bold text-xs p-2 bg-white min-w-[120px] text-center flex items-center justify-center" id="validDate"></div>
+                    <div class="bg-total-orange font-bold text-xs p-2 flex items-center border-r-black flex-grow">Estimate valid to (90 days):</div>
+                    <div class="font-bold text-xs p-2 bg-sheet min-w-[120px] text-center flex items-center justify-center" id="validDate"></div>
                 </div>
             </div>
 
@@ -125,59 +184,56 @@
                         <thead><tr class="text-xs"><th class="bg-hdr-blue">Items</th><th class="bg-hdr-green">QTY</th><th class="bg-hdr-green">HRS/Piece</th><th class="bg-hdr-green">Total</th></tr></thead>
                         <tbody id="custom-rows-container"></tbody>
                     </table>
-                    
-                    <div class="no-print p-1 border-b border-black text-center bg-gray-50 space-x-2">
+                    <div class="no-print p-1 border-b-black text-center bg-gray-50 dark:bg-gray-700">
                         <button onclick="addItemRow()" class="text-[10px] bg-blue-600 text-white px-4 py-1 rounded font-bold hover:bg-blue-700">+ Add Item Row</button>
-                        <button onclick="openPasteFromGPT()" class="text-[10px] bg-amber-600 text-white px-4 py-1 rounded font-bold hover:bg-amber-700">Paste from GPT</button>
                     </div>
-
                     <table class="w-full border-b-2 border-black">
                         <colgroup><col style="width: 50%"><col style="width: 15%"><col style="width: 20%"><col style="width: 15%"></colgroup>
                         <tbody id="fixed-tasks-container" class="text-xs"></tbody>
                     </table>
-                    <div class="grid grid-cols-[1fr_60px] border-b border-black">
-                        <div class="p-2 border-r border-black text-right font-bold bg-gray-100 text-sm flex items-center justify-end">Total Hours</div>
+                    <div class="grid grid-cols-[1fr_60px] border-b-black">
+                        <div class="p-2 border-r-black text-right font-bold bg-hdr-grey text-sm flex items-center justify-end">Total Hours</div>
                         <div class="p-2 text-center font-bold text-lg flex items-center justify-center" id="grandTotalHrs">0.0</div>
                     </div>
                     <div class="grid grid-cols-[1fr_60px] border-b-2 border-black">
-                        <div class="p-2 border-r border-black text-right text-xs bg-gray-200 flex items-center justify-end">Labour in Days (<span id="lbl_dayHrs">7.25</span>hr)</div>
+                        <div class="p-2 border-r-black text-right text-xs bg-hdr-grey flex items-center justify-end">Labour in Days (<span id="lbl_dayHrs">7.25</span>hr)</div>
                         <div class="p-2 text-center font-bold text-lg flex items-center justify-center" id="grandTotalDays">0.00</div>
                     </div>
                     
                     <div class="bg-row-blue border-b-2 border-black p-2 flex items-center justify-between">
                         <span class="font-bold text-sm">Manual Days on Site:</span>
-                        <input type="number" id="manualGlobalDays" value="1" class="w-20 p-1 text-center border border-black font-bold bg-white" oninput="calc()">
+                        <input type="number" id="manualGlobalDays" value="1" class="w-20 p-1 text-center border border-black font-bold bg-sheet" oninput="calc()">
                     </div>
                     
                     <div class="flex-grow flex flex-col min-h-[100px] bg-row-blue">
-                        <div class="p-1 text-xs font-bold text-gray-600 border-b border-gray-400 ml-2">Site Notes</div>
-                        <textarea id="siteNotes" class="w-full flex-grow bg-transparent p-2 resize-none text-sm placeholder-gray-500" placeholder="Enter notes here..."></textarea>
+                        <div class="p-1 text-xs font-bold border-b border-gray-400 ml-2 opacity-70">Site Notes</div>
+                        <textarea id="siteNotes" class="w-full flex-grow bg-transparent p-2 resize-none text-sm placeholder-gray-500 dark:placeholder-gray-300" placeholder="Enter notes here..."></textarea>
                     </div>
                 </div>
 
                 <div class="w-7/12 flex flex-col">
                     <div class="flex h-32 border-b-2 border-black">
                         <div class="w-1/2 border-r-2 border-black bg-row-blue flex flex-col">
-                            <div class="text-xs text-center p-1 border-b border-black">Collection Address</div>
-                            <div class="flex-grow flex items-center justify-center p-2 text-center text-sm font-bold"><textarea id="colAddr" class="w-full h-full bg-transparent text-center resize-none" placeholder="Enter Collection Address..."></textarea></div>
+                            <div class="text-xs text-center p-1 border-b-black">Collection Address</div>
+                            <div class="flex-grow flex items-center justify-center p-2 text-center text-sm font-bold"><textarea id="colAddr" class="w-full h-full bg-transparent text-center resize-none">RSF Ropley&#10;SO24 0EF</textarea></div>
                         </div>
                         <div class="w-1/2 bg-row-blue flex flex-col">
-                            <div class="text-xs text-center p-1 border-b border-black">Site / Delivery Address</div>
-                            <div class="flex-grow p-2"><textarea id="siteAddr" class="w-full h-full bg-transparent text-center resize-none placeholder-gray-500 font-bold" placeholder="Enter Site Address..."></textarea></div>
+                            <div class="text-xs text-center p-1 border-b-black">Site / Delivery Address</div>
+                            <div class="flex-grow p-2"><textarea id="siteAddr" class="w-full h-full bg-transparent text-center resize-none placeholder-gray-500 dark:placeholder-gray-300 font-bold" placeholder="Enter Site Address..."></textarea></div>
                         </div>
                     </div>
-                    <div class="bg-row-yellow border-b-2 border-black p-2 h-20"><textarea id="specificNotes" class="w-full h-full bg-transparent resize-none text-xs placeholder-gray-600 text-blue-900" placeholder="Site specific notes..."></textarea></div>
+                    <div class="bg-row-yellow border-b-2 border-black p-2 h-20"><textarea id="specificNotes" class="w-full h-full bg-transparent resize-none text-xs placeholder-gray-600 dark:placeholder-gray-300" placeholder="Site specific notes..."></textarea></div>
                     
-                    <table class="w-full border-b border-black">
+                    <table class="w-full border-b-black">
                         <colgroup><col style="width: 40%"><col style="width: 15%"><col style="width: 15%"><col style="width: 15%"><col style="width: 15%"></colgroup>
                         <thead><tr class="text-xs bg-hdr-grey font-bold"><th>Role</th><th>Installers</th><th>Cost/Day</th><th>Days</th><th>Total</th></tr></thead>
                         <tbody id="labour-rows" class="text-xs"></tbody>
                     </table>
-                    <table class="w-full border-b border-black">
+                    <table class="w-full border-b-black">
                         <colgroup><col style="width: 55%"><col style="width: 15%"><col style="width: 15%"><col style="width: 15%"></colgroup>
                         <tbody id="expenses-rows" class="text-xs"></tbody>
                     </table>
-                    <table class="w-full border-b border-black">
+                    <table class="w-full border-b-black">
                         <colgroup><col style="width: 25%"><col style="width: 20%"><col style="width: 15%"><col style="width: 20%"><col style="width: 20%"></colgroup>
                         <thead><tr class="text-xs bg-hdr-grey font-bold"><th>Size</th><th>Cost</th><th>Qty</th><th>Area</th><th>Total</th></tr></thead>
                         <tbody id="veh-rows" class="text-xs"></tbody>
@@ -186,10 +242,10 @@
                     <div class="flex flex-grow">
                         <div class="w-7/12 border-r-2 border-black flex flex-col text-xs" id="globals-rows"></div>
                         <div class="w-5/12 bg-total-orange flex flex-col justify-end">
-                            <div class="flex justify-between items-center p-2 border-b border-black"><span class="font-bold text-lg">Estimate Total</span><span class="font-bold text-xl" id="finalTotal">£0.00</span></div>
-                            <div class="flex justify-between items-center p-2 border-b border-black text-xs font-bold text-gray-700"><span>OOH Total (x<span id="lbl_ooh">1.6</span>)</span><span id="oohTotal">£0.00</span></div>
-                            <div class="flex justify-between items-center p-2 border-b border-black text-xs font-bold text-gray-700"><span>Saturday Total (x<span id="lbl_sat">1.75</span>)</span><span id="satTotal">£0.00</span></div>
-                            <div class="flex justify-between items-center p-2 text-xs font-bold text-gray-700"><span>Sunday Total (x<span id="lbl_sun">2.0</span>)</span><span id="sunTotal">£0.00</span></div>
+                            <div class="flex justify-between items-center p-2 border-b-black"><span class="font-bold text-lg">Estimate Total</span><span class="font-bold text-xl" id="finalTotal">£0.00</span></div>
+                            <div class="flex justify-between items-center p-2 border-b-black text-xs font-bold opacity-80"><span>OOH Total (x<span id="lbl_ooh">1.6</span>)</span><span id="oohTotal">£0.00</span></div>
+                            <div class="flex justify-between items-center p-2 border-b-black text-xs font-bold opacity-80"><span>Saturday Total (x<span id="lbl_sat">1.75</span>)</span><span id="satTotal">£0.00</span></div>
+                            <div class="flex justify-between items-center p-2 text-xs font-bold opacity-80"><span>Sunday Total (x<span id="lbl_sun">2.0</span>)</span><span id="sunTotal">£0.00</span></div>
                         </div>
                     </div>
                 </div>
@@ -198,13 +254,13 @@
             <div class="border-t-2 border-black flex">
                 <div class="w-8/12 p-2 text-[10px] leading-tight border-r-2 border-black"><strong>Note:</strong> T&Cs are attached on the following page.</div>
                 <div class="w-4/12 flex flex-col">
-                    <div class="text-[10px] font-bold text-center border-b border-black p-1 bg-gray-100">Estimate Issued By</div>
+                    <div class="text-[10px] font-bold text-center border-b-black p-1 bg-hdr-grey">Estimate Issued By</div>
                     <div class="flex-grow flex items-center justify-center p-2"><input type="text" value="Ben Hone" class="text-center font-bold text-xl w-full"></div>
                 </div>
             </div>
         </div>
 
-        <div id="page-2" class="hidden-on-screen p-12 bg-white">
+        <div id="page-2" class="hidden-on-screen p-12 bg-sheet transition-colors duration-300">
             <h2 class="text-2xl font-bold border-b-2 border-black pb-4 mb-6">Terms & Conditions of Business</h2>
             <div id="terms-display" class="text-sm text-justify whitespace-pre-wrap leading-relaxed"></div>
         </div>
@@ -212,31 +268,14 @@
 
     <div id="toast">Saved!</div>
 
-    <div id="paste-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 items-center justify-center">
-      <div class="bg-white rounded shadow-lg p-4 w-[600px] max-w-[95%]">
-        <div class="flex justify-between items-center mb-2">
-          <h2 class="text-sm font-bold">Paste table from GPT</h2>
-          <button onclick="closePasteFromGPT()" class="text-xs px-2 py-1 bg-gray-200 rounded">Close</button>
-        </div>
-        <p class="text-[11px] text-gray-600 mb-2">
-          Paste the table here. Headers should include <strong>Product/Description</strong>, <strong>Qty</strong>, and <strong>Hours</strong>.
-        </p>
-        <textarea id="paste-input" class="w-full h-48 border border-gray-300 text-xs p-2 font-mono"></textarea>
-        <div class="flex justify-end mt-3 space-x-2">
-          <button onclick="applyPasteFromGPT(true)" class="text-xs px-3 py-1 bg-gray-200 rounded">Append</button>
-          <button onclick="applyPasteFromGPT(false)" class="text-xs px-3 py-1 bg-blue-600 text-white rounded">Replace Items</button>
-        </div>
-      </div>
-    </div>
-
     <div id="library-view" class="hidden fixed inset-0 bg-black bg-opacity-75 overflow-y-auto p-4 z-50 flex items-center justify-center">
-        <div class="bg-white rounded-lg shadow-xl p-6 w-[1000px] max-h-[85vh] flex flex-col">
-            <div class="flex justify-between items-center mb-4 border-b pb-2">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-[1000px] max-h-[85vh] flex flex-col text-gray-800 dark:text-white">
+            <div class="flex justify-between items-center mb-4 border-b dark:border-gray-600 pb-2">
                 <h3 class="text-2xl font-bold">Estimate Library</h3>
-                <button onclick="document.getElementById('library-view').classList.add('hidden')" class="text-gray-500 hover:text-black text-xl font-bold">✕</button>
+                <button onclick="document.getElementById('library-view').classList.add('hidden')" class="text-gray-500 hover:text-gray-300 text-xl font-bold">✕</button>
             </div>
             <div class="mb-4">
-                <input type="text" id="lib-search" class="w-full border p-2 rounded" placeholder="Search Project Name or Ref..." oninput="filterLibrary()">
+                <input type="text" id="lib-search" class="w-full border p-2 rounded dark:bg-gray-700 dark:border-gray-600" placeholder="Search Project Name or Ref..." oninput="filterLibrary()">
             </div>
             <div class="flex-grow overflow-y-auto">
                 <table class="w-full lib-table">
@@ -283,12 +322,11 @@
     </div>
 
     <script>
-        // --- SUPABASE CONFIG ---
+        // --- SUPABASE ---
         const PROJECT_URL = 'https://wgsqrjnliglemogtukly.supabase.co';
         const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indnc3Fyam5saWdsZW1vZ3R1a2x5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5ODY2MTIsImV4cCI6MjA3OTU2MjYxMn0.chlJ9Ba2kQDu_xnqMfwcRwv5pgiwHnv7FJJSzKxbPeM';
         const supabase = window.supabase.createClient(PROJECT_URL, ANON_KEY);
 
-        // --- APP STATE ---
         const DEFAULT_TERMS = `1. All estimates are supplied on the assumption of clear access...`;
         const DEFAULT_CONFIG = {
             labour: [ { id: 'l1', label: "Installer + Veh", val: 325, type: 'day' }, { id: 'l2', label: "2 Person Team", val: 550, type: 'day' }, { id: 'l3', label: "Installer On Foot", val: 185, type: 'day' }, { id: 'l4', label: "Supervisor", val: 220, type: 'day' }, { id: 'l5', label: "Custom/Snag", val: 750, type: 'day' } ],
@@ -303,7 +341,22 @@
         let currentEstimateId = null;
         let libraryData = [];
 
+        // --- THEME LOGIC ---
+        function toggleTheme() {
+            const body = document.body;
+            body.classList.toggle('dark');
+            const isDark = body.classList.contains('dark');
+            document.getElementById('theme-icon').innerText = isDark ? '☀️' : '🌙';
+            localStorage.setItem('bh_theme', isDark ? 'dark' : 'light');
+        }
+
         window.onload = async function() {
+            // Load Theme Preference
+            if (localStorage.getItem('bh_theme') === 'dark') {
+                document.body.classList.add('dark');
+                document.getElementById('theme-icon').innerText = '☀️';
+            }
+
             await loadSharedConfig();
             addItemRow();
             renderMainSheet();
@@ -329,76 +382,6 @@
             const x = document.getElementById("toast");
             x.innerText = msg; x.className = "show";
             setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
-        }
-
-        // --- PASTE FROM GPT ---
-        function openPasteFromGPT() {
-            const modal = document.getElementById('paste-modal');
-            document.getElementById('paste-input').value = '';
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
-
-        function closePasteFromGPT() {
-            const modal = document.getElementById('paste-modal');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-        }
-
-        function parseGPTTable(raw) {
-            if (!raw) return [];
-            const lines = raw.trim().split(/\r?\n+/).filter(l => l.trim() !== '');
-            if (!lines.length) return [];
-
-            const firstParts = lines[0].split(/\t+|\s*\|\s*/).map(s => s.trim());
-            const headersLower = firstParts.map(h => h.toLowerCase());
-            const looksLikeHeader = headersLower.some(h => h.includes('product') || h.includes('desc') || h.includes('qty') || h.includes('hour'));
-
-            let startIdx = 0, idxDesc = 0, idxQty = 1, idxHrs = 2;
-
-            if (looksLikeHeader) {
-                const d = headersLower.findIndex(h => h.includes('product') || h.includes('desc') || h.includes('item'));
-                const q = headersLower.findIndex(h => h.includes('qty') || h.includes('quant'));
-                const h = headersLower.findIndex(h => h.includes('hour') || h.includes('time'));
-                if (d >= 0) idxDesc = d;
-                if (q >= 0) idxQty = q;
-                if (h >= 0) idxHrs = h;
-                startIdx = 1;
-            }
-
-            const rows = [];
-            for (let i = startIdx; i < lines.length; i++) {
-                const parts = lines[i].split(/\t+|\s*\|\s*/).map(s => s.trim());
-                if (parts.length < 2) continue;
-                const desc = (parts[idxDesc] || '').trim();
-                if (!desc || desc.match(/^-+$/)) continue;
-                const qty = parseFloat((parts[idxQty] || '').replace(/[^0-9.]/g, '')) || 0;
-                const hrs = parseFloat((parts[idxHrs] || '').replace(/[^0-9.]/g, '')) || 0;
-                rows.push({ desc, qty, hrs });
-            }
-            return rows;
-        }
-
-        function applyPasteFromGPT(append) {
-            const raw = document.getElementById('paste-input').value;
-            const rows = parseGPTTable(raw);
-            if (!rows.length) { alert('Nothing parsed.'); return; }
-            if (!append) document.getElementById('custom-rows-container').innerHTML = '';
-            
-            const c = document.getElementById('custom-rows-container');
-            rows.forEach(r => {
-                c.insertAdjacentHTML('beforeend', `
-                <tr class="text-xs border-b border-black">
-                    <td class="p-0"><textarea class="cell-input left" oninput="autoResize(this)">${r.desc}</textarea></td>
-                    <td class="p-0"><input type="number" class="custom-qty cell-input" value="${r.qty}" oninput="calc()"></td>
-                    <td class="p-0"><input type="number" class="custom-rate cell-input" value="${r.hrs}" oninput="calc()"></td>
-                    <td class="text-center custom-total">0.0</td>
-                </tr>`);
-            });
-            
-            document.querySelectorAll('textarea').forEach(ta => autoResize(ta));
-            closePasteFromGPT();
-            calc();
         }
 
         // --- NEW ESTIMATE ---
@@ -708,8 +691,12 @@
         function resetDefaults() { if(confirm("Reset?")) { localStorage.removeItem('bh_est_config_v21'); location.reload(); } }
 
         function generatePDF() {
-            saveEstimate('update'); // Auto save
+            saveEstimate('update');
             
+            // Temporarily force light mode if in dark mode for PDF generation
+            const wasDark = document.body.classList.contains('dark');
+            if(wasDark) document.body.classList.remove('dark');
+
             const el = document.getElementById('ui-container');
             const page2 = document.getElementById('page-2');
             page2.classList.remove('hidden-on-screen');
@@ -726,9 +713,9 @@
                  btns.forEach(b => b.style.display = '');
                  page2.classList.add('hidden-on-screen'); 
                  page2.classList.remove('pdf-page-break');
+                 if(wasDark) document.body.classList.add('dark'); // Restore theme
             });
         }
-        function generateExcel() { alert('Excel export not available in preview.'); }
     </script>
 </body>
 </html>
