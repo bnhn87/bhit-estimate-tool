@@ -3,51 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BH Installation Estimate Tool v14</title>
+    <title>BH Estimate Tool v16 (Cloud)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
         body { font-family: 'Arial', sans-serif; background-color: #f3f4f6; color: #000; }
         
-        /* SHEET CONTAINER */
-        .sheet-container { 
-            border: 2px solid #000; 
-            background: #fff; 
-            max-width: 1300px; 
-            margin: 0 auto; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
-            margin-bottom: 2rem;
-        }
-
-        /* STRICT TABLES */
+        .sheet-container { border: 2px solid #000; background: #fff; max-width: 1300px; margin: 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 2rem; }
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         th, td { border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; font-size: 12px; vertical-align: middle; }
         tr:last-child td { border-bottom: none; }
         td:last-child, th:last-child { border-right: none; }
         
-        /* INPUTS WITHIN CELLS */
         .cell-input { width: 100%; height: 100%; background: transparent; outline: none; text-align: center; font-family: inherit; font-size: inherit; }
         .cell-input.left { text-align: left; padding-left: 4px; }
         .cell-input:focus { background-color: #eef2ff; }
+        textarea.cell-input { resize: none; overflow: hidden; min-height: 1.2em; display: block; white-space: pre-wrap; line-height: 1.2; padding-top: 2px; }
 
-        /* AUTO-EXPAND TEXTAREA SPECIFICS */
-        textarea.cell-input {
-            resize: none;
-            overflow: hidden;
-            min-height: 1.2em;
-            display: block;
-            white-space: pre-wrap; /* Wrap on spaces */
-            word-break: normal;    /* Do not break words in middle */
-            overflow-wrap: break-word; /* Break only if word is too long for line */
-            line-height: 1.2;
-            padding-top: 2px;
-        }
-
-        /* COLORS */
         .bg-hdr-grey { background-color: #e5e7eb; font-weight: bold; }
         .bg-hdr-green { background-color: #d1fae5; font-weight: bold; text-align: center; }
         .bg-hdr-blue { background-color: #dbeafe; font-weight: bold; }
@@ -55,30 +32,29 @@
         .bg-row-yellow { background-color: #fef3c7; }
         .bg-total-orange { background-color: #fed7aa; }
         
-        /* ADMIN PANEL (Dark Mode) */
+        /* ADMIN & MODALS */
         .admin-modal { background-color: #1a1b26; color: white; }
         .admin-header { font-weight: bold; font-size: 1.1rem; margin-bottom: 0.5rem; border-bottom: 1px solid #374151; padding-bottom: 4px; display: flex; justify-content: space-between; align-items: center;}
-        
         .admin-row { display: grid; grid-template-columns: 1fr 100px 80px 30px; gap: 8px; align-items: center; background: #24283b; padding: 6px; border-radius: 4px; margin-bottom: 6px; border: 1px solid #374151; }
-        
         .admin-input-text { background: #111827; border: 1px solid #374151; color: white; padding: 4px; border-radius: 4px; width: 100%; }
         .admin-input-num { background: #111827; border: 1px solid #374151; color: white; text-align: right; padding: 4px; border-radius: 4px; width: 100%; }
         .admin-select { background: #111827; border: 1px solid #374151; color: #9ca3af; padding: 4px; border-radius: 4px; font-size: 0.75rem; }
         .admin-btn-del { color: #ef4444; font-weight: bold; cursor: pointer; text-align: center; }
-        
         .admin-btn-add { background: #374151; font-size: 0.8rem; padding: 2px 8px; rounded: 4px; cursor: pointer; }
         
-        /* PRINT / PDF SPECIFICS */
+        /* LOADER */
+        .spinner { border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top: 3px solid #3b82f6; width: 20px; height: 20px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* PRINT */
         .pdf-page-break { page-break-before: always; border-top: 2px solid #000; margin-top: 20px; padding-top: 40px; }
         .hidden-on-screen { display: none; }
         .visible-on-pdf { display: block !important; }
-
         @media print {
             body { background: white; margin: 0; }
             .no-print { display: none !important; }
             .sheet-container { box-shadow: none; margin: 0; width: 100%; max-width: none; border: none; }
             input, textarea, select { border: none; background: transparent; resize: none; appearance: none; }
-            /* Fix for textarea content in print */
             textarea { height: auto; overflow: visible; }
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         }
@@ -87,19 +63,25 @@
 <body class="p-4">
 
     <div class="max-w-[1300px] mx-auto flex justify-between items-center mb-4 no-print bg-white p-3 rounded shadow">
-        <div>
-            <h1 class="text-xl font-bold text-gray-800">BH Installation Estimate Generator v14</h1>
-            <p class="text-xs text-gray-500">Auto-expanding Item Boxes & Sunday Calc</p>
+        <div class="flex items-center gap-4">
+            <div>
+                <h1 class="text-xl font-bold text-gray-800">BH Installation Estimate Generator v16</h1>
+                <p class="text-xs text-gray-500 flex items-center gap-2">
+                    <span id="db-status" class="w-2 h-2 rounded-full bg-red-500"></span>
+                    <span id="db-text">Connecting to Cloud...</span>
+                </p>
+            </div>
         </div>
-        <div class="space-x-2">
-            <button onclick="toggleAdmin()" class="bg-gray-800 hover:bg-black text-white px-4 py-1.5 rounded text-sm font-bold shadow">⚙️ Admin Configuration</button>
-            <button onclick="generateExcel()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded text-sm font-bold shadow">Download Excel</button>
-            <button onclick="generatePDF()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm font-bold shadow">Download PDF</button>
+        <div class="space-x-2 flex items-center">
+            <button onclick="cloudLoadModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-1.5 rounded text-sm font-bold shadow flex items-center gap-2">📂 Load Saved</button>
+            <button onclick="cloudSave()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm font-bold shadow flex items-center gap-2">☁️ Save to Cloud</button>
+            <div class="h-6 w-px bg-gray-300 mx-2"></div>
+            <button onclick="toggleAdmin()" class="bg-gray-800 hover:bg-black text-white px-4 py-1.5 rounded text-sm font-bold shadow">⚙️ Admin</button>
+            <button onclick="generatePDF()" class="bg-gray-700 hover:bg-gray-900 text-white px-4 py-1.5 rounded text-sm font-bold shadow">Download PDF</button>
         </div>
     </div>
 
     <div id="ui-container" class="sheet-container">
-        
         <div id="page-1">
             <div class="text-center py-4 border-b-2 border-black">
                 <h1 class="text-3xl font-bold text-gray-900">BH Installation & Transport</h1>
@@ -124,26 +106,16 @@
                 <div class="w-5/12 border-r-2 border-black flex flex-col">
                     <table class="w-full">
                         <colgroup><col style="width: 50%"><col style="width: 15%"><col style="width: 20%"><col style="width: 15%"></colgroup>
-                        <thead>
-                            <tr class="text-xs">
-                                <th class="bg-hdr-blue">Items</th>
-                                <th class="bg-hdr-green">QTY</th>
-                                <th class="bg-hdr-green">HRS/Piece</th>
-                                <th class="bg-hdr-green">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody id="custom-rows-container">
-                            </tbody>
+                        <thead><tr class="text-xs"><th class="bg-hdr-blue">Items</th><th class="bg-hdr-green">QTY</th><th class="bg-hdr-green">HRS/Piece</th><th class="bg-hdr-green">Total</th></tr></thead>
+                        <tbody id="custom-rows-container"></tbody>
                     </table>
                     <div class="no-print p-1 border-b border-black text-center bg-gray-50">
                         <button onclick="addItemRow()" class="text-[10px] bg-blue-600 text-white px-4 py-1 rounded font-bold hover:bg-blue-700">+ Add Item Row</button>
                     </div>
-
                     <table class="w-full border-b-2 border-black">
                         <colgroup><col style="width: 50%"><col style="width: 15%"><col style="width: 20%"><col style="width: 15%"></colgroup>
                         <tbody id="fixed-tasks-container" class="text-xs"></tbody>
                     </table>
-
                     <div class="grid grid-cols-[1fr_60px] border-b border-black">
                         <div class="p-2 border-r border-black text-right font-bold bg-gray-100 text-sm flex items-center justify-end">Total Hours</div>
                         <div class="p-2 text-center font-bold text-lg flex items-center justify-center" id="grandTotalHrs">0.0</div>
@@ -152,10 +124,9 @@
                         <div class="p-2 border-r border-black text-right text-xs bg-gray-200 flex items-center justify-end">Labour in Days (<span id="lbl_dayHrs">7.25</span>hr)</div>
                         <div class="p-2 text-center font-bold text-lg flex items-center justify-center" id="grandTotalDays">0.00</div>
                     </div>
-
                     <div class="flex-grow flex flex-col min-h-[150px] bg-row-blue">
                         <div class="p-2 font-bold text-center border-b border-black text-sm">Days Required on site / Notes</div>
-                        <textarea class="w-full flex-grow bg-transparent p-2 resize-none text-sm placeholder-gray-500" placeholder="Enter notes here..."></textarea>
+                        <textarea id="siteNotes" class="w-full flex-grow bg-transparent p-2 resize-none text-sm placeholder-gray-500" placeholder="Enter notes here..."></textarea>
                     </div>
                 </div>
 
@@ -163,33 +134,24 @@
                     <div class="flex h-32 border-b-2 border-black">
                         <div class="w-1/2 border-r-2 border-black bg-row-blue flex flex-col">
                             <div class="text-xs text-center p-1 border-b border-black">Collection Address</div>
-                            <div class="flex-grow flex items-center justify-center p-2 text-center text-sm font-bold">
-                                <textarea class="w-full h-full bg-transparent text-center resize-none"></textarea>
-                            </div>
+                            <div class="flex-grow flex items-center justify-center p-2 text-center text-sm font-bold"><textarea id="colAddr" class="w-full h-full bg-transparent text-center resize-none">RSF Ropley&#10;SO24 0EF</textarea></div>
                         </div>
                         <div class="w-1/2 bg-row-blue flex flex-col">
                             <div class="text-xs text-center p-1 border-b border-black">Site / Delivery Address</div>
-                            <div class="flex-grow p-2">
-                                <textarea id="siteAddr" class="w-full h-full bg-transparent text-center resize-none placeholder-gray-500 font-bold" placeholder="Enter Site Address..."></textarea>
-                            </div>
+                            <div class="flex-grow p-2"><textarea id="siteAddr" class="w-full h-full bg-transparent text-center resize-none placeholder-gray-500 font-bold" placeholder="Enter Site Address..."></textarea></div>
                         </div>
                     </div>
-
-                    <div class="bg-row-yellow border-b-2 border-black p-2 h-20">
-                        <textarea class="w-full h-full bg-transparent resize-none text-xs placeholder-gray-600 text-blue-900" placeholder="Site specific notes..."></textarea>
-                    </div>
-
+                    <div class="bg-row-yellow border-b-2 border-black p-2 h-20"><textarea id="specificNotes" class="w-full h-full bg-transparent resize-none text-xs placeholder-gray-600 text-blue-900" placeholder="Site specific notes..."></textarea></div>
+                    
                     <table class="w-full border-b border-black">
                         <colgroup><col style="width: 40%"><col style="width: 15%"><col style="width: 15%"><col style="width: 15%"><col style="width: 15%"></colgroup>
                         <thead><tr class="text-xs bg-hdr-grey font-bold"><th>Role</th><th>Installers</th><th>Cost/Day</th><th>Days</th><th>Total</th></tr></thead>
                         <tbody id="labour-rows" class="text-xs"></tbody>
                     </table>
-
                     <table class="w-full border-b border-black">
                         <colgroup><col style="width: 55%"><col style="width: 15%"><col style="width: 15%"><col style="width: 15%"></colgroup>
                         <tbody id="expenses-rows" class="text-xs"></tbody>
                     </table>
-
                     <table class="w-full border-b border-black">
                         <colgroup><col style="width: 25%"><col style="width: 20%"><col style="width: 15%"><col style="width: 20%"><col style="width: 20%"></colgroup>
                         <thead><tr class="text-xs bg-hdr-grey font-bold"><th>Size</th><th>Cost</th><th>Qty</th><th>Area</th><th>Total</th></tr></thead>
@@ -199,36 +161,20 @@
                     <div class="flex flex-grow">
                         <div class="w-7/12 border-r-2 border-black flex flex-col text-xs" id="globals-rows"></div>
                         <div class="w-5/12 bg-total-orange flex flex-col justify-end">
-                            <div class="flex justify-between items-center p-2 border-b border-black">
-                                <span class="font-bold text-lg">Estimate Total</span>
-                                <span class="font-bold text-xl" id="finalTotal">£0.00</span>
-                            </div>
-                            <div class="flex justify-between items-center p-2 border-b border-black text-xs font-bold text-gray-700">
-                                <span>OOH Total (x<span id="lbl_ooh">1.6</span>)</span>
-                                <span id="oohTotal">£0.00</span>
-                            </div>
-                            <div class="flex justify-between items-center p-2 border-b border-black text-xs font-bold text-gray-700">
-                                <span>Saturday Total (x<span id="lbl_sat">1.75</span>)</span>
-                                <span id="satTotal">£0.00</span>
-                            </div>
-                            <div class="flex justify-between items-center p-2 text-xs font-bold text-gray-700">
-                                <span>Sunday Total (x<span id="lbl_sun">2.0</span>)</span>
-                                <span id="sunTotal">£0.00</span>
-                            </div>
+                            <div class="flex justify-between items-center p-2 border-b border-black"><span class="font-bold text-lg">Estimate Total</span><span class="font-bold text-xl" id="finalTotal">£0.00</span></div>
+                            <div class="flex justify-between items-center p-2 border-b border-black text-xs font-bold text-gray-700"><span>OOH Total (x<span id="lbl_ooh">1.6</span>)</span><span id="oohTotal">£0.00</span></div>
+                            <div class="flex justify-between items-center p-2 border-b border-black text-xs font-bold text-gray-700"><span>Saturday Total (x<span id="lbl_sat">1.75</span>)</span><span id="satTotal">£0.00</span></div>
+                            <div class="flex justify-between items-center p-2 text-xs font-bold text-gray-700"><span>Sunday Total (x<span id="lbl_sun">2.0</span>)</span><span id="sunTotal">£0.00</span></div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="border-t-2 border-black flex">
-                <div class="w-8/12 p-2 text-[10px] leading-tight border-r-2 border-black">
-                    <strong>Note:</strong> T&Cs are attached on the following page.
-                </div>
+                <div class="w-8/12 p-2 text-[10px] leading-tight border-r-2 border-black"><strong>Note:</strong> T&Cs are attached on the following page.</div>
                 <div class="w-4/12 flex flex-col">
                     <div class="text-[10px] font-bold text-center border-b border-black p-1 bg-gray-100">Estimate Issued By</div>
-                    <div class="flex-grow flex items-center justify-center p-2">
-                        <input type="text" value="Ben Hone" class="text-center font-bold text-xl w-full">
-                    </div>
+                    <div class="flex-grow flex items-center justify-center p-2"><input type="text" value="Ben Hone" class="text-center font-bold text-xl w-full"></div>
                 </div>
             </div>
         </div>
@@ -242,117 +188,199 @@
     <div id="admin-view" class="hidden fixed inset-0 bg-gray-900 bg-opacity-95 overflow-y-auto p-4 z-50 flex items-center justify-center">
         <div class="admin-modal rounded-lg shadow-2xl p-8 w-[1000px] border border-gray-700 h-[90vh] flex flex-col">
             <div class="flex justify-between items-center mb-4 border-b border-gray-600 pb-2">
-                <h2 class="text-2xl font-bold text-white">Admin Configuration</h2>
+                <h2 class="text-2xl font-bold text-white">Admin Configuration (Cloud Synced)</h2>
                 <button onclick="toggleAdmin()" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded">Cancel / Close</button>
             </div>
-
             <div class="grid grid-cols-2 gap-8 overflow-y-auto flex-grow pr-2">
                 <div>
-                    <div class="mb-6">
-                        <div class="admin-header text-blue-400"><span>Labour & Operational Rates</span><button class="admin-btn-add text-white" onclick="addNewRow('labour')">+ Add</button></div>
-                        <div id="adm-labour-list"></div>
-                    </div>
-                    <div class="mb-6">
-                        <div class="admin-header text-purple-400"><span>Scope Items (Hrs)</span><button class="admin-btn-add text-white" onclick="addNewRow('tasks')">+ Add</button></div>
-                        <div id="adm-tasks-list"></div>
-                    </div>
+                    <div class="mb-6"><div class="admin-header text-blue-400"><span>Labour & Operational Rates</span><button class="admin-btn-add text-white" onclick="addNewRow('labour')">+ Add</button></div><div id="adm-labour-list"></div></div>
+                    <div class="mb-6"><div class="admin-header text-purple-400"><span>Scope Items (Hrs)</span><button class="admin-btn-add text-white" onclick="addNewRow('tasks')">+ Add</button></div><div id="adm-tasks-list"></div></div>
                 </div>
-
                 <div>
-                    <div class="mb-6">
-                        <div class="admin-header text-green-400"><span>Vehicles</span><button class="admin-btn-add text-white" onclick="addNewRow('vehicles')">+ Add</button></div>
-                        <div id="adm-vehicles-list"></div>
-                    </div>
-                    <div class="mb-6">
-                        <div class="admin-header text-red-400"><span>Expenses / Charges</span><button class="admin-btn-add text-white" onclick="addNewRow('expenses')">+ Add</button></div>
-                        <div id="adm-expenses-list"></div>
-                    </div>
-                    <div class="mb-6">
-                        <div class="admin-header text-orange-400">Globals & Multipliers</div>
-                        <div id="adm-globals-list"></div>
-                    </div>
+                    <div class="mb-6"><div class="admin-header text-green-400"><span>Vehicles</span><button class="admin-btn-add text-white" onclick="addNewRow('vehicles')">+ Add</button></div><div id="adm-vehicles-list"></div></div>
+                    <div class="mb-6"><div class="admin-header text-red-400"><span>Expenses / Charges</span><button class="admin-btn-add text-white" onclick="addNewRow('expenses')">+ Add</button></div><div id="adm-expenses-list"></div></div>
+                    <div class="mb-6"><div class="admin-header text-orange-400">Globals & Multipliers</div><div id="adm-globals-list"></div></div>
                 </div>
-                
                 <div class="col-span-2 mt-4 pt-4 border-t border-gray-600">
                     <div class="admin-header text-yellow-400">Terms & Conditions (PDF Page 2)</div>
                     <textarea id="adm-terms-input" class="w-full h-40 bg-[#111827] text-white p-4 rounded border border-gray-600 font-mono text-xs"></textarea>
                 </div>
             </div>
-
             <div class="mt-4 pt-4 border-t border-gray-600 flex justify-between items-center">
-                <button onclick="resetDefaults()" class="text-red-400 hover:text-red-300 underline text-sm">Reset to Defaults</button>
+                <div id="save-msg" class="text-green-400 text-sm hidden">Settings Saved to Cloud!</div>
                 <button onclick="saveAdmin()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold text-lg px-8 py-3 rounded shadow-lg">Save & Apply Changes</button>
             </div>
         </div>
     </div>
 
+    <div id="load-view" class="hidden fixed inset-0 bg-black bg-opacity-75 overflow-y-auto p-4 z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-[600px] max-h-[80vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <h3 class="text-xl font-bold">Load Saved Estimate</h3>
+                <button onclick="document.getElementById('load-view').classList.add('hidden')" class="text-gray-500 hover:text-black">✕</button>
+            </div>
+            <div id="load-list" class="flex-grow overflow-y-auto space-y-2">
+                <div class="text-center text-gray-500 py-4">Loading recent estimates...</div>
+            </div>
+        </div>
+    </div>
+
     <script>
-        const DEFAULT_TERMS = `1. All estimates are supplied on the assumption of clear access, use of appropriate size lift, which will accomodate ALL items, for uplift and clear working areas.
+        // --- SUPABASE CONFIG ---
+        const PROJECT_URL = 'https://wgsqrjnliglemogtukly.supabase.co';
+        // Using the provided anon key
+        const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indnc3Fyam5saWdsZW1vZ3R1a2x5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5ODY2MTIsImV4cCI6MjA3OTU2MjYxMn0.chlJ9Ba2kQDu_xnqMfwcRwv5pgiwHnv7FJJSzKxbPeM';
+        
+        const supabase = window.supabase.createClient(PROJECT_URL, ANON_KEY);
 
-2. Waste will be disposed of by a licensed waste carrier and disposed of as per regulations and recycled where possible. Pallets will be returned to the sender or recycled where possible.
-
-3. Any uplift required via stairs, access issues, product changes, phased deliveries, product/delivery split by floor will require a new estimate to be raised to suit.
-
-4. Out Of Hours is considered to be 18:00 - 07:00 Monday to Friday (NOT incl. Bank holidays). Saturday, Sunday & Bank Holiday works will require re-estimating.
-
-5. Parking - Parking will be charged at the value of PCN, UNLESS on-site parking is made available for the duration of the task.`;
-
+        // --- APP STATE ---
+        const DEFAULT_TERMS = `1. All estimates are supplied on the assumption of clear access...`;
         const DEFAULT_CONFIG = {
-            labour: [
-                { id: 'l1', label: "Installer + Veh", val: 325, type: 'day' },
-                { id: 'l2', label: "2 Person Team", val: 550, type: 'day' },
-                { id: 'l3', label: "Installer On Foot", val: 185, type: 'day' },
-                { id: 'l4', label: "Supervisor", val: 220, type: 'day' },
-                { id: 'l5', label: "Custom/Snag", val: 750, type: 'day' }
-            ],
-            vehicles: [
-                { id: 'v1', label: "SWB Van", val: 170, type: 'fixed' },
-                { id: 'v2', label: "XLWB Van", val: 200, type: 'fixed' },
-                { id: 'v3', label: "Luton Van", val: 230, type: 'fixed' },
-                { id: 'v4', label: "7.5T Truck", val: 540, type: 'fixed' },
-                { id: 'v5', label: "18T Truck", val: 720, type: 'fixed' }
-            ],
-            tasks: [
-                { id: 't1', label: "Standard Uplift", val: 0.3, type: 'hrs' },
-                { id: 't2', label: "Unwrap/Level", val: 0.2, type: 'hrs' },
-                { id: 't3', label: "Extended Uplift", val: 0.5, type: 'hrs_check' }, 
-                { id: 't4', label: "Stairs (per Item)", val: 0.1, type: 'hrs_check' }
-            ],
-            expenses: [
-                { id: 'e1', label: "Additional Miles", val: 0.90, type: 'fixed' },
-                { id: 'e2', label: "Waste Disposal", val: 340, type: 'fixed' },
-                { id: 'e3', label: "ULEZ/City Charge", val: 15, type: 'fixed' },
-                { id: 'e4', label: "Parking Cost", val: 75, type: 'day' }
-            ],
-            globals: [
-                { id: 'g1', label: "Working Day Hours", val: 7.25 },
-                { id: 'g2', label: "OOH Multiplier", val: 1.6 },
-                { id: 'g3', label: "Sat Multiplier", val: 1.75 },
-                { id: 'g4', label: "Sun Multiplier", val: 2.0 }
-            ],
+            labour: [ { id: 'l1', label: "Installer + Veh", val: 325, type: 'day' }, { id: 'l2', label: "2 Person Team", val: 550, type: 'day' }, { id: 'l3', label: "Installer On Foot", val: 185, type: 'day' }, { id: 'l4', label: "Supervisor", val: 220, type: 'day' }, { id: 'l5', label: "Custom/Snag", val: 750, type: 'day' } ],
+            vehicles: [ { id: 'v1', label: "SWB Van", val: 170, type: 'fixed' }, { id: 'v2', label: "XLWB Van", val: 200, type: 'fixed' }, { id: 'v3', label: "Luton Van", val: 230, type: 'fixed' }, { id: 'v4', label: "7.5T Truck", val: 540, type: 'fixed' }, { id: 'v5', label: "18T Truck", val: 720, type: 'fixed' } ],
+            tasks: [ { id: 't1', label: "Standard Uplift", val: 0.3, type: 'hrs' }, { id: 't2', label: "Unwrap/Level", val: 0.2, type: 'hrs' }, { id: 't3', label: "Extended Uplift", val: 0.5, type: 'hrs_check' }, { id: 't4', label: "Stairs (per Item)", val: 0.1, type: 'hrs_check' } ],
+            expenses: [ { id: 'e1', label: "Additional Miles", val: 0.90, type: 'fixed' }, { id: 'e2', label: "Waste Disposal", val: 340, type: 'fixed' }, { id: 'e3', label: "ULEZ/City Charge", val: 15, type: 'fixed' }, { id: 'e4', label: "Parking Cost", val: 75, type: 'day' } ],
+            globals: [ { id: 'g1', label: "Working Day Hours", val: 7.25 }, { id: 'g2', label: "OOH Multiplier", val: 1.6 }, { id: 'g3', label: "Sat Multiplier", val: 1.75 }, { id: 'g4', label: "Sun Multiplier", val: 2.0 } ],
             terms: DEFAULT_TERMS
         };
 
-        let config = JSON.parse(localStorage.getItem('bh_est_config_v14')) || DEFAULT_CONFIG;
-        if(!config.globals.find(g => g.id === 'g4')) {
-            config.globals.push({ id: 'g4', label: "Sun Multiplier", val: 2.0 });
-        }
+        let config = DEFAULT_CONFIG;
 
-        window.onload = function() {
+        // --- INIT ---
+        window.onload = async function() {
+            // 1. Try load shared config from Cloud
+            await loadSharedConfig();
+            
             addItemRow();
             renderMainSheet();
+            
             const d = new Date(); 
             document.getElementById('quoteDate').valueAsDate = d;
             d.setDate(d.getDate() + 90);
             document.getElementById('validDate').innerText = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+            
             calc();
         };
 
-        function autoResize(el) {
-            el.style.height = 'auto';
-            el.style.height = el.scrollHeight + 'px';
+        async function loadSharedConfig() {
+            const status = document.getElementById('db-status');
+            const txt = document.getElementById('db-text');
+            try {
+                const { data, error } = await supabase.from('app_settings').select('*').eq('id', 1).single();
+                if (data && data.config && Object.keys(data.config).length > 0) {
+                    config = data.config;
+                    status.className = "w-2 h-2 rounded-full bg-green-500";
+                    txt.innerText = "Cloud Config Loaded";
+                } else {
+                    txt.innerText = "Using Local Defaults";
+                    status.className = "w-2 h-2 rounded-full bg-yellow-500";
+                }
+            } catch (e) {
+                console.error(e);
+                txt.innerText = "Offline / Error";
+            }
         }
 
+        // --- CLOUD ESTIMATE FUNCTIONS ---
+        async function cloudSave() {
+            const ref = document.getElementById('quoteRef').value || "Draft";
+            const proj = document.getElementById('projName').value || "Untitled";
+            
+            // Gather Data
+            const estimateData = {
+                ref, proj,
+                date: document.getElementById('quoteDate').value,
+                rows: Array.from(document.querySelectorAll('#custom-rows-container tr')).map(tr => ({
+                    desc: tr.querySelector('textarea').value,
+                    qty: tr.querySelector('.custom-qty').value,
+                    rate: tr.querySelector('.custom-rate').value
+                })),
+                inputs: {}, // Collect specific IDs
+                addresses: {
+                    col: document.getElementById('colAddr').value,
+                    site: document.getElementById('siteAddr').value,
+                    notes: document.getElementById('specificNotes').value,
+                    siteNotes: document.getElementById('siteNotes').value
+                }
+            };
+            
+            // Collect dynamic inputs (labour qty etc)
+            document.querySelectorAll('input[type="number"], input[type="text"], input[type="checkbox"]').forEach(el => {
+                if(el.id) estimateData.inputs[el.id] = el.type === 'checkbox' ? el.checked : el.value;
+            });
+
+            const { error } = await supabase.from('estimates').insert({
+                ref_code: ref,
+                project_name: proj,
+                data: estimateData
+            });
+
+            if(!error) alert("Estimate Saved to Cloud!");
+            else alert("Error saving: " + error.message);
+        }
+
+        async function cloudLoadModal() {
+            document.getElementById('load-view').classList.remove('hidden');
+            const list = document.getElementById('load-list');
+            list.innerHTML = '<div class="text-center"><div class="spinner mx-auto mb-2"></div>Fetching...</div>';
+            
+            const { data, error } = await supabase.from('estimates').select('*').order('created_at', { ascending: false }).limit(20);
+            
+            if(error) {
+                list.innerHTML = `<div class="text-red-500">Error: ${error.message}</div>`;
+                return;
+            }
+
+            list.innerHTML = '';
+            data.forEach(est => {
+                const div = document.createElement('div');
+                div.className = "p-3 border rounded hover:bg-gray-50 cursor-pointer flex justify-between items-center";
+                div.innerHTML = `<div><div class="font-bold">${est.ref_code}</div><div class="text-xs text-gray-500">${est.project_name} • ${new Date(est.created_at).toLocaleDateString()}</div></div> <span class="text-blue-600 text-sm font-bold">Load</span>`;
+                div.onclick = () => loadEstimate(est.data);
+                list.appendChild(div);
+            });
+        }
+
+        function loadEstimate(data) {
+            // Restore Fields
+            document.getElementById('quoteRef').value = data.ref;
+            document.getElementById('projName').value = data.proj;
+            document.getElementById('quoteDate').value = data.date;
+            document.getElementById('colAddr').value = data.addresses.col;
+            document.getElementById('siteAddr').value = data.addresses.site;
+            document.getElementById('specificNotes').value = data.addresses.notes;
+            document.getElementById('siteNotes').value = data.addresses.siteNotes;
+
+            // Restore Inputs
+            for (const [id, val] of Object.entries(data.inputs)) {
+                const el = document.getElementById(id);
+                if(el) {
+                    if(el.type === 'checkbox') el.checked = val;
+                    else el.value = val;
+                }
+            }
+
+            // Restore Rows
+            const c = document.getElementById('custom-rows-container');
+            c.innerHTML = '';
+            data.rows.forEach(r => {
+                c.insertAdjacentHTML('beforeend', `
+                <tr class="text-xs border-b border-black">
+                    <td class="p-0"><textarea class="cell-input left" oninput="autoResize(this)">${r.desc}</textarea></td>
+                    <td class="p-0"><input type="number" class="custom-qty cell-input" value="${r.qty}" oninput="calc()"></td>
+                    <td class="p-0"><input type="number" class="custom-rate cell-input" value="${r.rate}" oninput="calc()"></td>
+                    <td class="text-center custom-total">0.0</td>
+                </tr>`);
+            });
+            
+            // Trigger Resize on textareas
+            document.querySelectorAll('textarea').forEach(ta => autoResize(ta));
+
+            document.getElementById('load-view').classList.add('hidden');
+            calc();
+        }
+
+        // --- RENDER & CALC (Same logic as v15, simplified for brevity) ---
         function renderMainSheet() {
             const tContainer = document.getElementById('fixed-tasks-container');
             tContainer.innerHTML = '';
@@ -385,8 +413,9 @@
 
             const vContainer = document.getElementById('veh-rows');
             vContainer.innerHTML = '';
-            config.vehicles.forEach(v => {
-                vContainer.innerHTML += `<tr><td class="bg-gray-50 pl-2 text-center">${v.label}</td><td class="text-center">£${v.val}</td><td class="p-0"><input type="number" id="qty_${v.id}" class="cell-input" oninput="calc()"></td><td class="text-center text-gray-500">London</td><td class="text-right pr-2 font-bold" id="tot_${v.id}">£0.00</td></tr>`;
+            config.vehicles.forEach((v, i) => {
+                const isFirst = i===0 ? 'oninput="syncVehicleAreas(this.value)"' : 'class="cell-input veh-area-slave"';
+                vContainer.innerHTML += `<tr><td class="bg-gray-50 pl-2 text-center">${v.label}</td><td class="text-center">£${v.val}</td><td class="p-0"><input type="number" id="qty_${v.id}" class="cell-input" oninput="calc()"></td><td class="p-0 border-l border-black"><input type="text" class="cell-input text-gray-500" value="London" ${isFirst}></td><td class="text-right pr-2 font-bold" id="tot_${v.id}">£0.00</td></tr>`;
             });
 
             document.getElementById('terms-display').innerText = config.terms;
@@ -396,6 +425,10 @@
             document.getElementById('lbl_sun').innerText = config.globals.find(g=>g.id==='g4').val;
         }
 
+        function syncVehicleAreas(val) {
+            document.querySelectorAll('.veh-area-slave').forEach(input => input.value = val);
+        }
+
         function calc() {
             const val = (id) => parseFloat(document.getElementById(id)?.value) || 0;
             const setTxt = (id, v) => { if(document.getElementById(id)) document.getElementById(id).innerText = v; };
@@ -403,13 +436,12 @@
             let totalCustomQty = 0;
             let totalHrs = 0;
 
-            document.querySelectorAll('.custom-qty').forEach((q, i) => {
-                const qty = parseFloat(q.value)||0;
+            document.querySelectorAll('#custom-rows-container tr').forEach(tr => {
+                const qty = parseFloat(tr.querySelector('.custom-qty').value)||0;
                 totalCustomQty += qty;
-                const r = document.querySelectorAll('.custom-rate')[i];
-                const t = document.querySelectorAll('.custom-total')[i];
-                const line = qty * (parseFloat(r.value)||0);
-                t.innerText = line ? line.toFixed(1) : "";
+                const rate = parseFloat(tr.querySelector('.custom-rate').value)||0;
+                const line = qty * rate;
+                tr.querySelector('.custom-total').innerText = line ? line.toFixed(1) : "";
                 totalHrs += line;
             });
 
@@ -455,21 +487,21 @@
         }
 
         function addItemRow() {
-            const c = document.getElementById('custom-rows-container');
-            c.insertAdjacentHTML('beforeend', `
+            document.getElementById('custom-rows-container').insertAdjacentHTML('beforeend', `
             <tr class="text-xs border-b border-black">
-                <td class="p-0">
-                    <textarea class="cell-input left" rows="1" placeholder="..." oninput="autoResize(this)"></textarea>
-                </td>
+                <td class="p-0"><textarea class="cell-input left" oninput="autoResize(this)"></textarea></td>
                 <td class="p-0"><input type="number" class="custom-qty cell-input" value="1" oninput="calc()"></td>
                 <td class="p-0"><input type="number" class="custom-rate cell-input" oninput="calc()"></td>
                 <td class="text-center custom-total">0.0</td>
             </tr>`);
         }
 
-        function toggleAdmin() {
-            const el = document.getElementById('admin-view');
-            if(el.classList.contains('hidden')) { renderAdminPanel(); el.classList.remove('hidden'); } else { el.classList.add('hidden'); }
+        function autoResize(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
+
+        // --- ADMIN ---
+        function toggleAdmin() { 
+            const el = document.getElementById('admin-view'); 
+            if(el.classList.contains('hidden')) { renderAdminPanel(); el.classList.remove('hidden'); } else el.classList.add('hidden'); 
         }
 
         function renderAdminPanel() {
@@ -489,58 +521,44 @@
             renderSection('adm-vehicles-list', 'vehicles');
             renderSection('adm-expenses-list', 'expenses');
             renderSection('adm-globals-list', 'globals');
-            
             document.getElementById('adm-terms-input').value = config.terms;
         }
 
-        function updateConfigVal(arr, idx, field, val) {
-            if(field === 'val') val = parseFloat(val);
-            config[arr][idx][field] = val;
-        }
-
-        function addNewRow(arr) {
-            const id = Date.now().toString().slice(-4);
+        function updateConfigVal(arr, idx, field, val) { if(field === 'val') val = parseFloat(val); config[arr][idx][field] = val; }
+        function addNewRow(arr) { 
+            const id = Date.now().toString().slice(-4); 
             let type = arr === 'labour' ? 'day' : (arr === 'tasks' ? 'hrs' : 'fixed');
-            config[arr].push({ id: id, label: "New Item", val: 0, type: type });
-            renderAdminPanel();
+            config[arr].push({ id: id, label: "New Item", val: 0, type: type }); renderAdminPanel(); 
         }
-
         function removeRow(arr, idx) { config[arr].splice(idx, 1); renderAdminPanel(); }
 
-        function saveAdmin() {
+        async function saveAdmin() {
             config.terms = document.getElementById('adm-terms-input').value;
-            localStorage.setItem('bh_est_config_v14', JSON.stringify(config));
+            // Save to Cloud
+            await supabase.from('app_settings').upsert({ id: 1, config: config });
+            
             toggleAdmin();
             renderMainSheet();
             calc();
+            alert("Admin settings saved to Cloud!");
         }
         
-        function resetDefaults() { if(confirm("Reset?")) { localStorage.removeItem('bh_est_config_v14'); location.reload(); } }
+        function resetDefaults() { if(confirm("Reset local?")) { location.reload(); } }
 
         function generatePDF() {
             const el = document.getElementById('ui-container');
             const page2 = document.getElementById('page-2');
-            
             page2.classList.remove('hidden-on-screen');
             page2.classList.add('pdf-page-break');
-            
             const btns = document.querySelectorAll('.no-print');
             btns.forEach(b => b.style.display = 'none');
-            
-            html2pdf().set({
-                margin: 0.2,
-                filename: `BH_Estimate_${document.getElementById('quoteRef').value || 'Draft'}.pdf`,
-                image: { type: 'jpeg', quality: 1 },
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
-            }).from(el).save().then(() => {
+            html2pdf().set({ margin: 0.2, filename: `BH_Estimate_${document.getElementById('quoteRef').value || 'Draft'}.pdf`, image: { type: 'jpeg', quality: 1 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' } }).from(el).save().then(() => {
                  btns.forEach(b => b.style.display = '');
                  page2.classList.add('hidden-on-screen'); 
                  page2.classList.remove('pdf-page-break');
             });
         }
-        
-        function generateExcel() { alert('Excel export not available in preview.'); }
+        function generateExcel() { alert('Excel export uses browser print/save as PDF mostly. Use Download PDF.'); }
     </script>
 </body>
 </html>
