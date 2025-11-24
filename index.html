@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BH Installation Estimate Tool v21</title>
+    <title>BH Installation Estimate Tool v22</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -132,7 +132,7 @@
     <div class="max-w-[1300px] mx-auto flex justify-between items-center mb-4 no-print bg-white dark:bg-gray-800 p-3 rounded shadow transition-colors duration-300">
         <div class="flex items-center gap-4">
             <div>
-                <h1 class="text-xl font-bold text-gray-800 dark:text-white">BH Estimate Tool v21</h1>
+                <h1 class="text-xl font-bold text-gray-800 dark:text-white">BH Estimate Tool v22</h1>
                 <p class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
                     <span id="db-status" class="w-2 h-2 rounded-full bg-red-500"></span>
                     <span id="db-text">Connecting...</span>
@@ -184,8 +184,9 @@
                         <thead><tr class="text-xs"><th class="bg-hdr-blue">Items</th><th class="bg-hdr-green">QTY</th><th class="bg-hdr-green">HRS/Piece</th><th class="bg-hdr-green">Total</th></tr></thead>
                         <tbody id="custom-rows-container"></tbody>
                     </table>
-                    <div class="no-print p-1 border-b-black text-center bg-gray-50 dark:bg-gray-700">
+                    <div class="no-print p-1 border-b-black text-center bg-gray-50 dark:bg-gray-700 space-x-2">
                         <button onclick="addItemRow()" class="text-[10px] bg-blue-600 text-white px-4 py-1 rounded font-bold hover:bg-blue-700">+ Add Item Row</button>
+                        <button onclick="openPasteFromGPT()" class="text-[10px] bg-amber-600 text-white px-4 py-1 rounded font-bold hover:bg-amber-700">Paste from GPT</button>
                     </div>
                     <table class="w-full border-b-2 border-black">
                         <colgroup><col style="width: 50%"><col style="width: 15%"><col style="width: 20%"><col style="width: 15%"></colgroup>
@@ -206,8 +207,8 @@
                     </div>
                     
                     <div class="flex-grow flex flex-col min-h-[100px] bg-row-blue">
-                        <div class="p-1 text-xs font-bold border-b border-gray-400 ml-2 opacity-70">Site Notes</div>
-                        <textarea id="siteNotes" class="w-full flex-grow bg-transparent p-2 resize-none text-sm placeholder-gray-500 dark:placeholder-gray-300" placeholder="Enter notes here..."></textarea>
+                        <div class="p-1 text-xs font-bold border-b border-gray-400 ml-2 opacity-70">Site notes/Scope of works</div>
+                        <textarea id="siteNotes" class="w-full flex-grow bg-transparent p-2 resize-none text-sm placeholder-gray-500 dark:placeholder-gray-300">Installation of products as detailed in the supplied Works Order, delivered in accordance with site requirements and the agreed access conditions.</textarea>
                     </div>
                 </div>
 
@@ -215,7 +216,7 @@
                     <div class="flex h-32 border-b-2 border-black">
                         <div class="w-1/2 border-r-2 border-black bg-row-blue flex flex-col">
                             <div class="text-xs text-center p-1 border-b-black">Collection Address</div>
-                            <div class="flex-grow flex items-center justify-center p-2 text-center text-sm font-bold"><textarea id="colAddr" class="w-full h-full bg-transparent text-center resize-none">RSF Ropley&#10;SO24 0EF</textarea></div>
+                            <div class="flex-grow flex items-center justify-center p-2 text-center text-sm font-bold"><textarea id="colAddr" class="w-full h-full bg-transparent text-center resize-none placeholder-gray-500 dark:placeholder-gray-300" placeholder="Enter Collection Address..."></textarea></div>
                         </div>
                         <div class="w-1/2 bg-row-blue flex flex-col">
                             <div class="text-xs text-center p-1 border-b-black">Site / Delivery Address</div>
@@ -267,6 +268,21 @@
     </div>
 
     <div id="toast">Saved!</div>
+
+    <div id="paste-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 items-center justify-center">
+      <div class="bg-white dark:bg-gray-800 rounded shadow-lg p-4 w-[600px] max-w-[95%] text-black dark:text-white">
+        <div class="flex justify-between items-center mb-2">
+          <h2 class="text-sm font-bold">Paste table from GPT</h2>
+          <button onclick="closePasteFromGPT()" class="text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded">Close</button>
+        </div>
+        <p class="text-[11px] text-gray-600 dark:text-gray-400 mb-2">Paste columns: <strong>Description</strong>, <strong>Qty</strong>, <strong>Hours</strong>.</p>
+        <textarea id="paste-input" class="w-full h-48 border border-gray-300 dark:border-gray-600 text-xs p-2 font-mono bg-transparent"></textarea>
+        <div class="flex justify-end mt-3 space-x-2">
+          <button onclick="applyPasteFromGPT(true)" class="text-xs px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded">Append</button>
+          <button onclick="applyPasteFromGPT(false)" class="text-xs px-3 py-1 bg-blue-600 text-white rounded">Replace Items</button>
+        </div>
+      </div>
+    </div>
 
     <div id="library-view" class="hidden fixed inset-0 bg-black bg-opacity-75 overflow-y-auto p-4 z-50 flex items-center justify-center">
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-[1000px] max-h-[85vh] flex flex-col text-gray-800 dark:text-white">
@@ -384,6 +400,76 @@
             setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
         }
 
+        // --- PASTE FROM GPT ---
+        function openPasteFromGPT() {
+            const modal = document.getElementById('paste-modal');
+            document.getElementById('paste-input').value = '';
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closePasteFromGPT() {
+            const modal = document.getElementById('paste-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function parseGPTTable(raw) {
+            if (!raw) return [];
+            const lines = raw.trim().split(/\r?\n+/).filter(l => l.trim() !== '');
+            if (!lines.length) return [];
+
+            const firstParts = lines[0].split(/\t+|\s*\|\s*/).map(s => s.trim());
+            const headersLower = firstParts.map(h => h.toLowerCase());
+            const looksLikeHeader = headersLower.some(h => h.includes('product') || h.includes('desc') || h.includes('qty') || h.includes('hour'));
+
+            let startIdx = 0, idxDesc = 0, idxQty = 1, idxHrs = 2;
+
+            if (looksLikeHeader) {
+                const d = headersLower.findIndex(h => h.includes('product') || h.includes('desc') || h.includes('item'));
+                const q = headersLower.findIndex(h => h.includes('qty') || h.includes('quant'));
+                const h = headersLower.findIndex(h => h.includes('hour') || h.includes('time'));
+                if (d >= 0) idxDesc = d;
+                if (q >= 0) idxQty = q;
+                if (h >= 0) idxHrs = h;
+                startIdx = 1;
+            }
+
+            const rows = [];
+            for (let i = startIdx; i < lines.length; i++) {
+                const parts = lines[i].split(/\t+|\s*\|\s*/).map(s => s.trim());
+                if (parts.length < 2) continue;
+                const desc = (parts[idxDesc] || '').trim();
+                if (!desc || desc.match(/^-+$/)) continue;
+                const qty = parseFloat((parts[idxQty] || '').replace(/[^0-9.]/g, '')) || 0;
+                const hrs = parseFloat((parts[idxHrs] || '').replace(/[^0-9.]/g, '')) || 0;
+                rows.push({ desc, qty, hrs });
+            }
+            return rows;
+        }
+
+        function applyPasteFromGPT(append) {
+            const raw = document.getElementById('paste-input').value;
+            const rows = parseGPTTable(raw);
+            if (!rows.length) { alert('Nothing parsed.'); return; }
+            if (!append) document.getElementById('custom-rows-container').innerHTML = '';
+            
+            const c = document.getElementById('custom-rows-container');
+            rows.forEach(r => {
+                c.insertAdjacentHTML('beforeend', `
+                <tr class="text-xs border-b border-black">
+                    <td class="p-0"><textarea class="cell-input left" oninput="autoResize(this)">${r.desc}</textarea></td>
+                    <td class="p-0"><input type="number" class="custom-qty cell-input" value="${r.qty}" oninput="calc()"></td>
+                    <td class="p-0"><input type="number" class="custom-rate cell-input" value="${r.hrs}" oninput="calc()"></td>
+                    <td class="text-center custom-total">0.0</td>
+                </tr>`);
+            });
+            
+            document.querySelectorAll('textarea').forEach(ta => autoResize(ta));
+            closePasteFromGPT();
+            calc();
+        }
+
         // --- NEW ESTIMATE ---
         function newEstimate() {
             if(!confirm("Clear current estimate?")) return;
@@ -392,7 +478,10 @@
             document.getElementById('projName').value = '';
             document.getElementById('colAddr').value = ""; 
             document.getElementById('siteAddr').value = '';
-            document.getElementById('siteNotes').value = '';
+            
+            // RESET NOTES TO DEFAULT
+            document.getElementById('siteNotes').value = 'Installation of products as detailed in the supplied Works Order, delivered in accordance with site requirements and the agreed access conditions.';
+            
             document.getElementById('specificNotes').value = '';
             document.getElementById('manualGlobalDays').value = '1';
             document.getElementById('custom-rows-container').innerHTML = '';
@@ -688,12 +777,11 @@
             showToast("Admin Settings Saved");
         }
         
-        function resetDefaults() { if(confirm("Reset?")) { localStorage.removeItem('bh_est_config_v21'); location.reload(); } }
+        function resetDefaults() { if(confirm("Reset?")) { localStorage.removeItem('bh_est_config_v22'); location.reload(); } }
 
         function generatePDF() {
             saveEstimate('update');
             
-            // Temporarily force light mode if in dark mode for PDF generation
             const wasDark = document.body.classList.contains('dark');
             if(wasDark) document.body.classList.remove('dark');
 
@@ -713,7 +801,7 @@
                  btns.forEach(b => b.style.display = '');
                  page2.classList.add('hidden-on-screen'); 
                  page2.classList.remove('pdf-page-break');
-                 if(wasDark) document.body.classList.add('dark'); // Restore theme
+                 if(wasDark) document.body.classList.add('dark');
             });
         }
     </script>
