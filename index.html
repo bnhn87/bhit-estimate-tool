@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BH Installation Estimate Tool v22</title>
+    <title>BH Installation Estimate Tool v24</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -12,7 +12,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
-        /* BASE THEME (LIGHT) */
+        /* BASE THEME */
         :root {
             --bg-body: #f3f4f6;
             --bg-sheet: #ffffff;
@@ -29,21 +29,20 @@
             --bg-total-orange: #fed7aa;
         }
 
-        /* DARK THEME OVERRIDES */
+        /* DARK THEME */
         body.dark {
-            --bg-body: #111827; /* Gray 900 */
-            --bg-sheet: #1f2937; /* Gray 800 */
-            --text-main: #e5e7eb; /* Gray 200 */
-            --border-main: #4b5563; /* Gray 600 */
+            --bg-body: #111827;
+            --bg-sheet: #1f2937;
+            --text-main: #e5e7eb;
+            --border-main: #4b5563;
             --input-focus: #374151;
             
-            /* Headers (Muted for Dark Mode) */
             --bg-hdr-grey: #374151;
-            --bg-hdr-green: #064e3b; /* Dark Green */
-            --bg-hdr-blue: #1e3a8a; /* Dark Blue */
+            --bg-hdr-green: #064e3b;
+            --bg-hdr-blue: #1e3a8a;
             --bg-row-blue: #1e3a8a;
-            --bg-row-yellow: #78350f; /* Dark Amber */
-            --bg-total-orange: #7c2d12; /* Dark Orange */
+            --bg-row-yellow: #78350f;
+            --bg-total-orange: #7c2d12;
         }
 
         body { font-family: 'Arial', sans-serif; background-color: var(--bg-body); color: var(--text-main); transition: background-color 0.3s, color 0.3s; }
@@ -54,7 +53,7 @@
             background: var(--bg-sheet); 
             max-width: 1300px; 
             margin: 0 auto; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); 
             margin-bottom: 2rem; 
         }
         
@@ -63,51 +62,46 @@
         th, td { border-right: 1px solid var(--border-main); border-bottom: 1px solid var(--border-main); padding: 4px; font-size: 12px; vertical-align: middle; }
         tr:last-child td { border-bottom: none; }
         td:last-child, th:last-child { border-right: none; }
-        
-        /* BORDERS */
+        tr:hover td { background-color: rgba(0,0,0,0.02); } /* Subtle hover */
+
+        /* BORDERS & COLORS */
         .border-b-black { border-bottom-color: var(--border-main) !important; }
         .border-r-black { border-right-color: var(--border-main) !important; }
         .border-black { border-color: var(--border-main) !important; }
-        .border-2 { border-width: 2px; }
-
-        /* INPUTS */
-        .cell-input { width: 100%; height: 100%; background: transparent; outline: none; text-align: center; font-family: inherit; font-size: inherit; color: var(--text-main); }
-        .cell-input.left { text-align: left; padding-left: 4px; }
-        .cell-input:focus { background-color: var(--input-focus); }
-        textarea.cell-input { resize: none; overflow: hidden; min-height: 1.2em; display: block; white-space: pre-wrap; line-height: 1.2; padding-top: 2px; color: var(--text-main); }
         
-        /* DYNAMIC COLORS */
         .bg-hdr-grey { background-color: var(--bg-hdr-grey); font-weight: bold; }
         .bg-hdr-green { background-color: var(--bg-hdr-green); font-weight: bold; text-align: center; }
         .bg-hdr-blue { background-color: var(--bg-hdr-blue); font-weight: bold; }
         .bg-row-blue { background-color: var(--bg-row-blue); }
         .bg-row-yellow { background-color: var(--bg-row-yellow); }
         .bg-total-orange { background-color: var(--bg-total-orange); }
-        
-        /* Dark Mode Text Fixes for Colored Rows */
-        body.dark .bg-hdr-green, body.dark .bg-hdr-blue, body.dark .bg-row-blue, body.dark .bg-row-yellow, body.dark .bg-total-orange {
-            color: #e5e7eb;
-        }
-        /* Specific inputs in colored rows need white text in dark mode */
+
+        /* Dark Mode Text Fixes */
+        body.dark .bg-hdr-green, body.dark .bg-hdr-blue, body.dark .bg-row-blue, body.dark .bg-row-yellow, body.dark .bg-total-orange { color: #e5e7eb; }
         body.dark input, body.dark textarea { color: #fff; }
         body.dark ::placeholder { color: #9ca3af; }
 
-        /* MODALS */
+        /* INPUTS */
+        .cell-input { width: 100%; height: 100%; background: transparent; outline: none; text-align: center; font-family: inherit; font-size: inherit; color: var(--text-main); }
+        .cell-input.left { text-align: left; padding-left: 6px; }
+        .cell-input:focus { background-color: var(--input-focus); box-shadow: inset 0 0 0 2px rgba(59, 130, 246, 0.5); }
+        textarea.cell-input { resize: none; overflow: hidden; min-height: 1.4em; display: block; white-space: pre-wrap; line-height: 1.2; padding-top: 3px; color: var(--text-main); }
+
+        /* DELETE BUTTON */
+        .del-btn { color: #ef4444; font-weight: bold; cursor: pointer; opacity: 0; transition: opacity 0.2s; text-align: center; }
+        tr:hover .del-btn { opacity: 1; }
+
+        /* MODALS & TOAST */
         .admin-modal { background-color: #1a1b26; color: white; }
-        .admin-header { font-weight: bold; font-size: 1.1rem; margin-bottom: 0.5rem; border-bottom: 1px solid #374151; padding-bottom: 4px; display: flex; justify-content: space-between; align-items: center;}
         .admin-row { display: grid; grid-template-columns: 1fr 100px 80px 30px; gap: 8px; align-items: center; background: #24283b; padding: 6px; border-radius: 4px; margin-bottom: 6px; border: 1px solid #374151; }
         .admin-input-text { background: #111827; border: 1px solid #374151; color: white; padding: 4px; border-radius: 4px; width: 100%; }
         .admin-input-num { background: #111827; border: 1px solid #374151; color: white; text-align: right; padding: 4px; border-radius: 4px; width: 100%; }
         .admin-select { background: #111827; border: 1px solid #374151; color: #9ca3af; padding: 4px; border-radius: 4px; font-size: 0.75rem; }
-        .admin-btn-del { color: #ef4444; font-weight: bold; cursor: pointer; text-align: center; }
-        .admin-btn-add { background: #374151; font-size: 0.8rem; padding: 2px 8px; rounded: 4px; cursor: pointer; }
         
-        /* LIBRARY TABLE */
         .lib-table th { background-color: var(--bg-hdr-grey); text-align: left; padding: 8px; border-bottom: 2px solid var(--border-main); border-right: none; color: var(--text-main); }
         .lib-table td { border-bottom: 1px solid var(--border-main); padding: 8px; border-right: none; color: var(--text-main); }
         .lib-row:hover { background-color: var(--input-focus); cursor: pointer; }
 
-        /* TOAST */
         #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 4px; padding: 16px; position: fixed; z-index: 100; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 14px; }
         #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
@@ -119,7 +113,7 @@
         .visible-on-pdf { display: block !important; }
         @media print {
             body { background: white; margin: 0; color: black; }
-            .no-print { display: none !important; }
+            .no-print, .del-btn { display: none !important; }
             .sheet-container { box-shadow: none; margin: 0; width: 100%; max-width: none; border: none; }
             input, textarea, select { border: none; background: transparent; resize: none; appearance: none; color: black; }
             textarea { height: auto; overflow: visible; }
@@ -132,7 +126,7 @@
     <div class="max-w-[1300px] mx-auto flex justify-between items-center mb-4 no-print bg-white dark:bg-gray-800 p-3 rounded shadow transition-colors duration-300">
         <div class="flex items-center gap-4">
             <div>
-                <h1 class="text-xl font-bold text-gray-800 dark:text-white">BH Estimate Tool v22</h1>
+                <h1 class="text-xl font-bold text-gray-800 dark:text-white">BH Estimate Tool v24</h1>
                 <p class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
                     <span id="db-status" class="w-2 h-2 rounded-full bg-red-500"></span>
                     <span id="db-text">Connecting...</span>
@@ -141,7 +135,7 @@
             </div>
         </div>
         <div class="space-x-2 flex items-center">
-            <button onclick="toggleTheme()" class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white border border-gray-400 dark:border-gray-600 px-3 py-1.5 rounded text-sm font-bold shadow" title="Toggle Light/Dark Mode">
+            <button onclick="toggleTheme()" class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white border border-gray-400 dark:border-gray-600 px-3 py-1.5 rounded text-sm font-bold shadow">
                 <span id="theme-icon">🌙</span>
             </button>
             <div class="h-6 w-px bg-gray-300 mx-1"></div>
@@ -158,7 +152,8 @@
 
     <div id="ui-container" class="sheet-container transition-colors duration-300">
         <div id="page-1">
-            <div class="text-center py-4 border-b-2 border-black">
+            <div class="text-center py-4 border-b-2 border-black relative">
+                <img id="logo-display" class="h-12 absolute left-4 top-4 hidden" alt="Logo">
                 <h1 class="text-3xl font-bold">BH Installation & Transport</h1>
             </div>
 
@@ -168,30 +163,58 @@
                 <div class="p-2 border-r-black bg-hdr-grey text-xs flex items-center justify-end font-bold">Estimate date:</div>
                 <div class="p-0"><input type="date" id="quoteDate" class="cell-input px-2 text-right"></div>
             </div>
-            <div class="grid grid-cols-[1fr_2fr_2fr] border-b-2 border-black">
+            
+            <div class="grid grid-cols-[1fr_2fr_1fr_2fr] border-b-2 border-black">
+                <div class="p-2 border-r-black bg-hdr-grey text-xs flex items-center font-bold">Client:</div>
+                <div class="p-0 border-r-black"><input type="text" id="clientName" class="cell-input left font-bold" placeholder="Client Company Name..."></div>
                 <div class="p-2 border-r-black bg-hdr-grey text-xs flex items-center font-bold">Project:</div>
-                <div class="p-0 border-r-black"><input type="text" id="projName" class="cell-input left font-bold" placeholder="Project Name"></div>
-                <div class="flex">
-                    <div class="bg-total-orange font-bold text-xs p-2 flex items-center border-r-black flex-grow">Estimate valid to (90 days):</div>
-                    <div class="font-bold text-xs p-2 bg-sheet min-w-[120px] text-center flex items-center justify-center" id="validDate"></div>
+                <div class="p-0"><input type="text" id="projName" class="cell-input left font-bold" placeholder="Project Name"></div>
+            </div>
+
+            <div class="flex border-b-2 border-black">
+                <div class="w-full flex">
+                    <div class="bg-total-orange font-bold text-xs p-2 flex items-center border-r-black w-1/3">Estimate valid to (90 days):</div>
+                    <div class="font-bold text-xs p-2 bg-sheet flex-grow" id="validDate"></div>
                 </div>
             </div>
 
             <div class="flex">
                 <div class="w-5/12 border-r-2 border-black flex flex-col">
+                    
                     <table class="w-full">
-                        <colgroup><col style="width: 50%"><col style="width: 15%"><col style="width: 20%"><col style="width: 15%"></colgroup>
-                        <thead><tr class="text-xs"><th class="bg-hdr-blue">Items</th><th class="bg-hdr-green">QTY</th><th class="bg-hdr-green">HRS/Piece</th><th class="bg-hdr-green">Total</th></tr></thead>
+                        <colgroup>
+                            <col style="width: 50%">
+                            <col style="width: 15%">
+                            <col style="width: 15%">
+                            <col style="width: 15%">
+                            <col style="width: 5%"> </colgroup>
+                        <thead>
+                            <tr class="text-xs">
+                                <th class="bg-hdr-blue">Items</th>
+                                <th class="bg-hdr-green">QTY</th>
+                                <th class="bg-hdr-green">HRS</th>
+                                <th class="bg-hdr-green">Total</th>
+                                <th class="bg-sheet border-none"></th>
+                            </tr>
+                        </thead>
                         <tbody id="custom-rows-container"></tbody>
                     </table>
+                    
                     <div class="no-print p-1 border-b-black text-center bg-gray-50 dark:bg-gray-700 space-x-2">
                         <button onclick="addItemRow()" class="text-[10px] bg-blue-600 text-white px-4 py-1 rounded font-bold hover:bg-blue-700">+ Add Item Row</button>
                         <button onclick="openPasteFromGPT()" class="text-[10px] bg-amber-600 text-white px-4 py-1 rounded font-bold hover:bg-amber-700">Paste from GPT</button>
                     </div>
+
                     <table class="w-full border-b-2 border-black">
-                        <colgroup><col style="width: 50%"><col style="width: 15%"><col style="width: 20%"><col style="width: 15%"></colgroup>
+                        <colgroup>
+                            <col style="width: 50%">
+                            <col style="width: 15%">
+                            <col style="width: 15%">
+                            <col style="width: 20%">
+                        </colgroup>
                         <tbody id="fixed-tasks-container" class="text-xs"></tbody>
                     </table>
+
                     <div class="grid grid-cols-[1fr_60px] border-b-black">
                         <div class="p-2 border-r-black text-right font-bold bg-hdr-grey text-sm flex items-center justify-end">Total Hours</div>
                         <div class="p-2 text-center font-bold text-lg flex items-center justify-center" id="grandTotalHrs">0.0</div>
@@ -227,118 +250,166 @@
                     
                     <table class="w-full border-b-black">
                         <colgroup><col style="width: 40%"><col style="width: 15%"><col style="width: 15%"><col style="width: 15%"><col style="width: 15%"></colgroup>
-                        <thead><tr class="text-xs bg-hdr-grey font-bold"><th>Role</th><th>Installers</th><th>Cost/Day</th><th>Days</th><th>Total</th></tr></thead>
-                        <tbody id="labour-rows" class="text-xs"></tbody>
+                        <thead><tr class="text-[10px] uppercase tracking-wider bg-gray-200 dark:bg-gray-700 font-bold print-bg-grey"><th>Role</th><th>Installers</th><th>Cost/Day</th><th>Days</th><th>Total</th></tr></thead>
+                        <tbody id="labour-rows" class="text-xs border-color-inherit"></tbody>
                     </table>
                     <table class="w-full border-b-black">
                         <colgroup><col style="width: 55%"><col style="width: 15%"><col style="width: 15%"><col style="width: 15%"></colgroup>
-                        <tbody id="expenses-rows" class="text-xs"></tbody>
+                        <tbody id="expenses-rows" class="text-xs border-color-inherit"></tbody>
                     </table>
                     <table class="w-full border-b-black">
                         <colgroup><col style="width: 25%"><col style="width: 20%"><col style="width: 15%"><col style="width: 20%"><col style="width: 20%"></colgroup>
-                        <thead><tr class="text-xs bg-hdr-grey font-bold"><th>Size</th><th>Cost</th><th>Qty</th><th>Area</th><th>Total</th></tr></thead>
-                        <tbody id="veh-rows" class="text-xs"></tbody>
+                        <thead><tr class="text-[10px] uppercase tracking-wider bg-gray-200 dark:bg-gray-700 font-bold print-bg-grey"><th>Size</th><th>Cost</th><th>Qty</th><th>Area</th><th>Total</th></tr></thead>
+                        <tbody id="veh-rows" class="text-xs border-color-inherit"></tbody>
                     </table>
 
                     <div class="flex flex-grow">
                         <div class="w-7/12 border-r-2 border-black flex flex-col text-xs" id="globals-rows"></div>
-                        <div class="w-5/12 bg-total-orange flex flex-col justify-end">
-                            <div class="flex justify-between items-center p-2 border-b-black"><span class="font-bold text-lg">Estimate Total</span><span class="font-bold text-xl" id="finalTotal">£0.00</span></div>
-                            <div class="flex justify-between items-center p-2 border-b-black text-xs font-bold opacity-80"><span>OOH Total (x<span id="lbl_ooh">1.6</span>)</span><span id="oohTotal">£0.00</span></div>
-                            <div class="flex justify-between items-center p-2 border-b-black text-xs font-bold opacity-80"><span>Saturday Total (x<span id="lbl_sat">1.75</span>)</span><span id="satTotal">£0.00</span></div>
-                            <div class="flex justify-between items-center p-2 text-xs font-bold opacity-80"><span>Sunday Total (x<span id="lbl_sun">2.0</span>)</span><span id="sunTotal">£0.00</span></div>
+                        <div class="w-5/12 bg-orange-100 dark:bg-orange-950/60 flex flex-col justify-end print-bg-orange">
+                            <div class="flex justify-between items-center p-3 border-b border-black dark:border-gray-500">
+                                <span class="font-bold text-lg">Total</span>
+                                <span class="font-bold text-2xl" id="finalTotal">£0.00</span>
+                            </div>
+                            <div class="p-2 space-y-1 text-xs font-mono opacity-80">
+                                <div class="flex justify-between"><span>OOH (x<span id="lbl_ooh">1.6</span>)</span><span id="oohTotal">£0.00</span></div>
+                                <div class="flex justify-between"><span>Sat (x<span id="lbl_sat">1.75</span>)</span><span id="satTotal">£0.00</span></div>
+                                <div class="flex justify-between"><span>Sun (x<span id="lbl_sun">2.0</span>)</span><span id="sunTotal">£0.00</span></div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="border-t-2 border-black flex">
-                <div class="w-8/12 p-2 text-[10px] leading-tight border-r-2 border-black"><strong>Note:</strong> T&Cs are attached on the following page.</div>
+            <div class="border-t-2 border-black dark:border-gray-500 flex bg-white dark:bg-gray-900">
+                <div class="w-8/12 p-2 text-[10px] leading-tight border-r-2 border-black dark:border-gray-500 text-gray-500">
+                    <strong>Note:</strong> T&Cs are attached on the following page.
+                </div>
                 <div class="w-4/12 flex flex-col">
-                    <div class="text-[10px] font-bold text-center border-b-black p-1 bg-hdr-grey">Estimate Issued By</div>
-                    <div class="flex-grow flex items-center justify-center p-2"><input type="text" value="Ben Hone" class="text-center font-bold text-xl w-full"></div>
+                    <div class="text-[10px] font-bold text-center border-b border-black dark:border-gray-500 p-1 bg-gray-100 dark:bg-gray-800 print-bg-grey">Estimate Issued By</div>
+                    <div class="flex-grow flex items-center justify-center p-2">
+                        <input type="text" value="Ben Hone" class="text-center font-bold text-xl w-full bg-transparent focus:outline-none">
+                    </div>
                 </div>
             </div>
         </div>
 
         <div id="page-2" class="hidden-on-screen p-12 bg-sheet transition-colors duration-300">
             <h2 class="text-2xl font-bold border-b-2 border-black pb-4 mb-6">Terms & Conditions of Business</h2>
-            <div id="terms-display" class="text-sm text-justify whitespace-pre-wrap leading-relaxed"></div>
+            <div id="terms-display" class="text-sm text-justify whitespace-pre-wrap leading-relaxed text-gray-800 dark:text-gray-300"></div>
         </div>
     </div>
 
     <div id="toast">Saved!</div>
 
-    <div id="paste-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 z-50 items-center justify-center">
-      <div class="bg-white dark:bg-gray-800 rounded shadow-lg p-4 w-[600px] max-w-[95%] text-black dark:text-white">
-        <div class="flex justify-between items-center mb-2">
-          <h2 class="text-sm font-bold">Paste table from GPT</h2>
-          <button onclick="closePasteFromGPT()" class="text-xs px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded">Close</button>
+    <div id="paste-modal" class="modal-overlay hidden">
+      <div class="modal-content w-[600px] max-h-[80vh] p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-bold flex items-center gap-2"><i data-lucide="clipboard"></i> Paste Table</h2>
+          <button onclick="closePasteFromGPT()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"><i data-lucide="x"></i></button>
         </div>
-        <p class="text-[11px] text-gray-600 dark:text-gray-400 mb-2">Paste columns: <strong>Description</strong>, <strong>Qty</strong>, <strong>Hours</strong>.</p>
-        <textarea id="paste-input" class="w-full h-48 border border-gray-300 dark:border-gray-600 text-xs p-2 font-mono bg-transparent"></textarea>
-        <div class="flex justify-end mt-3 space-x-2">
-          <button onclick="applyPasteFromGPT(true)" class="text-xs px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded">Append</button>
-          <button onclick="applyPasteFromGPT(false)" class="text-xs px-3 py-1 bg-blue-600 text-white rounded">Replace Items</button>
+        <p class="text-xs text-gray-500 mb-2">Supported columns: Description, Qty, Hours</p>
+        <textarea id="paste-input" class="w-full h-48 border border-gray-300 dark:border-gray-600 text-xs p-3 font-mono bg-gray-50 dark:bg-gray-900 rounded focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
+        <div class="flex justify-end mt-4 space-x-2">
+          <button onclick="applyPasteFromGPT(true)" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded text-xs font-bold hover:opacity-80">Append</button>
+          <button onclick="applyPasteFromGPT(false)" class="px-4 py-2 bg-blue-600 text-white rounded text-xs font-bold hover:bg-blue-700">Replace</button>
         </div>
       </div>
     </div>
 
-    <div id="library-view" class="hidden fixed inset-0 bg-black bg-opacity-75 overflow-y-auto p-4 z-50 flex items-center justify-center">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-[1000px] max-h-[85vh] flex flex-col text-gray-800 dark:text-white">
-            <div class="flex justify-between items-center mb-4 border-b dark:border-gray-600 pb-2">
-                <h3 class="text-2xl font-bold">Estimate Library</h3>
-                <button onclick="document.getElementById('library-view').classList.add('hidden')" class="text-gray-500 hover:text-gray-300 text-xl font-bold">✕</button>
+    <div id="library-view" class="modal-overlay hidden">
+        <div class="modal-content p-6">
+            <div class="flex justify-between items-center mb-4 border-b dark:border-gray-700 pb-3">
+                <h3 class="text-xl font-bold flex items-center gap-2"><i data-lucide="library"></i> Estimate Library</h3>
+                <button onclick="document.getElementById('library-view').classList.add('hidden')" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"><i data-lucide="x"></i></button>
             </div>
-            <div class="mb-4">
-                <input type="text" id="lib-search" class="w-full border p-2 rounded dark:bg-gray-700 dark:border-gray-600" placeholder="Search Project Name or Ref..." oninput="filterLibrary()">
+            <div class="mb-4 relative">
+                <i data-lucide="search" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+                <input type="text" id="lib-search" class="w-full border dark:border-gray-600 pl-9 p-2 rounded bg-gray-50 dark:bg-gray-900 focus:ring-2 focus:ring-purple-500 outline-none" placeholder="Search Project or Ref..." oninput="filterLibrary()">
             </div>
-            <div class="flex-grow overflow-y-auto">
+            <div class="flex-grow overflow-y-auto border dark:border-gray-700 rounded">
                 <table class="w-full lib-table">
                     <thead>
-                        <tr>
-                            <th style="width: 100px;">Date</th>
-                            <th style="width: 150px;">Ref Code</th>
-                            <th>Project</th>
-                            <th style="width: 100px;">Total</th>
-                            <th style="width: 160px;">Actions</th>
+                        <tr class="bg-gray-100 dark:bg-gray-800 text-left">
+                            <th class="p-3 w-24">Date</th>
+                            <th class="p-3 w-32">Ref</th>
+                            <th class="p-3">Project</th>
+                            <th class="p-3 w-24 text-right">Total</th>
+                            <th class="p-3 w-32 text-center">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="lib-list"></tbody>
+                    <tbody id="lib-list" class="divide-y divide-gray-200 dark:divide-gray-700"></tbody>
                 </table>
             </div>
         </div>
     </div>
 
-    <div id="admin-view" class="hidden fixed inset-0 bg-gray-900 bg-opacity-95 overflow-y-auto p-4 z-50 flex items-center justify-center">
-        <div class="admin-modal rounded-lg shadow-2xl p-8 w-[1000px] border border-gray-700 h-[90vh] flex flex-col">
-            <div class="flex justify-between items-center mb-4 border-b border-gray-600 pb-2">
-                <h2 class="text-2xl font-bold text-white">Admin Configuration (Cloud Synced)</h2>
-                <button onclick="toggleAdmin()" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded">Close</button>
+    <div id="admin-view" class="modal-overlay hidden">
+        <div class="modal-content p-0 h-[90vh] overflow-hidden">
+            <div class="flex justify-between items-center p-4 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                <h2 class="text-xl font-bold flex items-center gap-2"><i data-lucide="settings-2"></i> Admin Configuration</h2>
+                <button onclick="toggleAdmin()" class="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"><i data-lucide="x"></i></button>
             </div>
-            <div class="grid grid-cols-2 gap-8 overflow-y-auto flex-grow pr-2">
-                <div>
-                    <div class="mb-6"><div class="admin-header text-blue-400"><span>Labour & Operational Rates</span><button class="admin-btn-add text-white" onclick="addNewRow('labour')">+ Add</button></div><div id="adm-labour-list"></div></div>
-                    <div class="mb-6"><div class="admin-header text-purple-400"><span>Scope Items (Hrs)</span><button class="admin-btn-add text-white" onclick="addNewRow('tasks')">+ Add</button></div><div id="adm-tasks-list"></div></div>
+            <div class="grid grid-cols-2 gap-6 overflow-y-auto p-6 flex-grow bg-gray-100 dark:bg-gray-800">
+                <div class="col-span-2 bg-white dark:bg-gray-900 p-4 rounded shadow-sm border dark:border-gray-700">
+                    <div class="admin-header text-gray-600 dark:text-gray-400">Company Settings</div>
+                    <div class="flex items-center gap-4">
+                        <div class="flex-grow">
+                            <label class="block text-xs mb-1">Company Logo (Appears on PDF)</label>
+                            <input type="file" accept="image/*" onchange="handleLogoUpload(this)" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                        </div>
+                        <div id="admin-logo-preview" class="w-16 h-16 border flex items-center justify-center bg-gray-50 text-xs text-gray-400">No Logo</div>
+                    </div>
                 </div>
-                <div>
-                    <div class="mb-6"><div class="admin-header text-green-400"><span>Vehicles</span><button class="admin-btn-add text-white" onclick="addNewRow('vehicles')">+ Add</button></div><div id="adm-vehicles-list"></div></div>
-                    <div class="mb-6"><div class="admin-header text-red-400"><span>Expenses / Charges</span><button class="admin-btn-add text-white" onclick="addNewRow('expenses')">+ Add</button></div><div id="adm-expenses-list"></div></div>
-                    <div class="mb-6"><div class="admin-header text-orange-400">Globals & Multipliers</div><div id="adm-globals-list"></div></div>
+
+                <div class="space-y-6">
+                    <div class="bg-white dark:bg-gray-900 p-4 rounded shadow-sm border dark:border-gray-700">
+                        <div class="admin-header text-blue-600 dark:text-blue-400">Labour <button class="admin-btn-add" onclick="addNewRow('labour')">+ Add</button></div>
+                        <div id="adm-labour-list" class="space-y-2"></div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-900 p-4 rounded shadow-sm border dark:border-gray-700">
+                        <div class="admin-header text-purple-600 dark:text-purple-400">Scope Items <button class="admin-btn-add" onclick="addNewRow('tasks')">+ Add</button></div>
+                        <div id="adm-tasks-list" class="space-y-2"></div>
+                    </div>
                 </div>
-                <div class="col-span-2 mt-4 pt-4 border-t border-gray-600">
-                    <div class="admin-header text-yellow-400">Terms & Conditions (PDF Page 2)</div>
-                    <textarea id="adm-terms-input" class="w-full h-40 bg-[#111827] text-white p-4 rounded border border-gray-600 font-mono text-xs"></textarea>
+                <div class="space-y-6">
+                    <div class="bg-white dark:bg-gray-900 p-4 rounded shadow-sm border dark:border-gray-700">
+                        <div class="admin-header text-green-600 dark:text-green-400">Vehicles <button class="admin-btn-add" onclick="addNewRow('vehicles')">+ Add</button></div>
+                        <div id="adm-vehicles-list" class="space-y-2"></div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-900 p-4 rounded shadow-sm border dark:border-gray-700">
+                        <div class="admin-header text-red-600 dark:text-red-400">Expenses <button class="admin-btn-add" onclick="addNewRow('expenses')">+ Add</button></div>
+                        <div id="adm-expenses-list" class="space-y-2"></div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-900 p-4 rounded shadow-sm border dark:border-gray-700">
+                        <div class="admin-header text-orange-600 dark:text-orange-400">Globals</div>
+                        <div id="adm-globals-list" class="space-y-2"></div>
+                    </div>
+                </div>
+                <div class="col-span-2 bg-white dark:bg-gray-900 p-4 rounded shadow-sm border dark:border-gray-700">
+                    <div class="admin-header text-yellow-600 dark:text-yellow-400">Terms & Conditions</div>
+                    <textarea id="adm-terms-input" class="w-full h-32 bg-gray-50 dark:bg-gray-800 p-3 rounded border dark:border-gray-600 text-xs font-mono focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
                 </div>
             </div>
-            <div class="mt-4 pt-4 border-t border-gray-600 flex justify-between items-center">
-                <button onclick="saveAdmin()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold text-lg px-8 py-3 rounded shadow-lg">Save & Apply Changes</button>
+            <div class="p-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex justify-between items-center">
+                <button onclick="resetDefaults()" class="text-red-500 hover:text-red-700 text-sm font-bold">Reset Defaults</button>
+                <button onclick="saveAdmin()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-2 rounded shadow flex items-center gap-2"><i data-lucide="save"></i> Save Changes</button>
             </div>
         </div>
     </div>
 
+    <style>
+        .btn-action { @apply flex items-center gap-1.5 px-3 py-1.5 rounded border shadow-sm text-xs font-bold transition-all; }
+        .admin-header { @apply font-bold text-sm mb-3 pb-2 border-b dark:border-gray-700 flex justify-between items-center; }
+        .admin-row { @apply grid gap-2 items-center bg-gray-50 dark:bg-gray-800 p-2 rounded border dark:border-gray-700; grid-template-columns: 1fr 80px 80px 30px; }
+        .admin-input-text { @apply bg-white dark:bg-gray-700 border dark:border-gray-600 rounded px-2 py-1 text-xs w-full; }
+        .admin-input-num { @apply bg-white dark:bg-gray-700 border dark:border-gray-600 rounded px-2 py-1 text-xs text-right w-full; }
+        .admin-select { @apply bg-white dark:bg-gray-700 border dark:border-gray-600 rounded px-1 py-1 text-[10px]; }
+        .admin-btn-del { @apply text-red-500 hover:text-red-700 cursor-pointer text-center flex justify-center; }
+        .admin-btn-add { @apply bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-[10px] px-2 py-0.5 rounded hover:bg-gray-300 dark:hover:bg-gray-600; }
+    </style>
+
     <script>
-        // --- SUPABASE ---
+        // --- SUPABASE & CONFIG ---
         const PROJECT_URL = 'https://wgsqrjnliglemogtukly.supabase.co';
         const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indnc3Fyam5saWdsZW1vZ3R1a2x5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5ODY2MTIsImV4cCI6MjA3OTU2MjYxMn0.chlJ9Ba2kQDu_xnqMfwcRwv5pgiwHnv7FJJSzKxbPeM';
         const supabase = window.supabase.createClient(PROJECT_URL, ANON_KEY);
@@ -350,32 +421,47 @@
             tasks: [ { id: 't1', label: "Standard Uplift", val: 0.3, type: 'hrs' }, { id: 't2', label: "Unwrap/Level", val: 0.2, type: 'hrs' }, { id: 't3', label: "Extended Uplift", val: 0.5, type: 'hrs_check' }, { id: 't4', label: "Stairs (per Item)", val: 0.1, type: 'hrs_check' } ],
             expenses: [ { id: 'e1', label: "Additional Miles", val: 0.90, type: 'fixed' }, { id: 'e2', label: "Waste Disposal", val: 340, type: 'fixed' }, { id: 'e3', label: "ULEZ/City Charge", val: 15, type: 'fixed' }, { id: 'e4', label: "Parking Cost", val: 75, type: 'day' } ],
             globals: [ { id: 'g1', label: "Working Day Hours", val: 7.25 }, { id: 'g2', label: "OOH Multiplier", val: 1.6 }, { id: 'g3', label: "Sat Multiplier", val: 1.75 }, { id: 'g4', label: "Sun Multiplier", val: 2.0 } ],
-            terms: DEFAULT_TERMS
+            terms: DEFAULT_TERMS,
+            logo: "" 
         };
 
         let config = DEFAULT_CONFIG;
         let currentEstimateId = null;
         let libraryData = [];
 
-        // --- THEME LOGIC ---
+        // --- UTILS ---
+        const fmtMoney = (v) => `£${parseFloat(v).toFixed(2)}`;
+        function showToast(msg) { const x = document.getElementById("toast"); x.innerText = msg; x.className = "show"; setTimeout(() => x.className = x.className.replace("show", ""), 3000); }
+        
+        // --- THEME ---
         function toggleTheme() {
             const body = document.body;
             body.classList.toggle('dark');
-            const isDark = body.classList.contains('dark');
-            document.getElementById('theme-icon').innerText = isDark ? '☀️' : '🌙';
-            localStorage.setItem('bh_theme', isDark ? 'dark' : 'light');
+            localStorage.setItem('bh_theme', body.classList.contains('dark') ? 'dark' : 'light');
         }
 
-        window.onload = async function() {
-            // Load Theme Preference
-            if (localStorage.getItem('bh_theme') === 'dark') {
-                document.body.classList.add('dark');
-                document.getElementById('theme-icon').innerText = '☀️';
+        // --- LOGO HANDLER ---
+        function handleLogoUpload(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    config.logo = e.target.result; // Store base64
+                    document.getElementById('admin-logo-preview').innerHTML = `<img src="${config.logo}" class="h-full w-full object-contain">`;
+                };
+                if(input.files[0].size > 500000) { alert("File too large! Please use < 500KB"); return; }
+                reader.readAsDataURL(input.files[0]);
             }
+        }
 
+        // --- INIT ---
+        window.onload = async function() {
+            lucide.createIcons();
+            if (localStorage.getItem('bh_theme') === 'dark') document.body.classList.add('dark');
+            
             await loadSharedConfig();
             addItemRow();
             renderMainSheet();
+            
             const d = new Date(); 
             document.getElementById('quoteDate').valueAsDate = d;
             d.setDate(d.getDate() + 90);
@@ -385,277 +471,52 @@
 
         async function loadSharedConfig() {
             try {
-                const { data, error } = await supabase.from('app_settings').select('*').eq('id', 1).single();
+                const { data } = await supabase.from('app_settings').select('*').eq('id', 1).single();
                 if (data && data.config) {
                     config = data.config;
-                    document.getElementById('db-status').className = "w-2 h-2 rounded-full bg-green-500";
+                    document.getElementById('db-status').className = "w-2.5 h-2.5 rounded-full bg-green-500";
                     document.getElementById('db-text').innerText = "Cloud Connected";
+                    // Load Logo if exists
+                    if(config.logo) {
+                        document.getElementById('logo-display').src = config.logo;
+                        document.getElementById('logo-display').classList.remove('hidden');
+                    }
                 }
             } catch (e) { console.error(e); }
         }
 
-        function showToast(msg) {
-            const x = document.getElementById("toast");
-            x.innerText = msg; x.className = "show";
-            setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
-        }
-
-        // --- PASTE FROM GPT ---
-        function openPasteFromGPT() {
-            const modal = document.getElementById('paste-modal');
-            document.getElementById('paste-input').value = '';
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
-
-        function closePasteFromGPT() {
-            const modal = document.getElementById('paste-modal');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-        }
-
-        function parseGPTTable(raw) {
-            if (!raw) return [];
-            const lines = raw.trim().split(/\r?\n+/).filter(l => l.trim() !== '');
-            if (!lines.length) return [];
-
-            const firstParts = lines[0].split(/\t+|\s*\|\s*/).map(s => s.trim());
-            const headersLower = firstParts.map(h => h.toLowerCase());
-            const looksLikeHeader = headersLower.some(h => h.includes('product') || h.includes('desc') || h.includes('qty') || h.includes('hour'));
-
-            let startIdx = 0, idxDesc = 0, idxQty = 1, idxHrs = 2;
-
-            if (looksLikeHeader) {
-                const d = headersLower.findIndex(h => h.includes('product') || h.includes('desc') || h.includes('item'));
-                const q = headersLower.findIndex(h => h.includes('qty') || h.includes('quant'));
-                const h = headersLower.findIndex(h => h.includes('hour') || h.includes('time'));
-                if (d >= 0) idxDesc = d;
-                if (q >= 0) idxQty = q;
-                if (h >= 0) idxHrs = h;
-                startIdx = 1;
-            }
-
-            const rows = [];
-            for (let i = startIdx; i < lines.length; i++) {
-                const parts = lines[i].split(/\t+|\s*\|\s*/).map(s => s.trim());
-                if (parts.length < 2) continue;
-                const desc = (parts[idxDesc] || '').trim();
-                if (!desc || desc.match(/^-+$/)) continue;
-                const qty = parseFloat((parts[idxQty] || '').replace(/[^0-9.]/g, '')) || 0;
-                const hrs = parseFloat((parts[idxHrs] || '').replace(/[^0-9.]/g, '')) || 0;
-                rows.push({ desc, qty, hrs });
-            }
-            return rows;
-        }
-
-        function applyPasteFromGPT(append) {
-            const raw = document.getElementById('paste-input').value;
-            const rows = parseGPTTable(raw);
-            if (!rows.length) { alert('Nothing parsed.'); return; }
-            if (!append) document.getElementById('custom-rows-container').innerHTML = '';
-            
-            const c = document.getElementById('custom-rows-container');
-            rows.forEach(r => {
-                c.insertAdjacentHTML('beforeend', `
-                <tr class="text-xs border-b border-black">
-                    <td class="p-0"><textarea class="cell-input left" oninput="autoResize(this)">${r.desc}</textarea></td>
-                    <td class="p-0"><input type="number" class="custom-qty cell-input" value="${r.qty}" oninput="calc()"></td>
-                    <td class="p-0"><input type="number" class="custom-rate cell-input" value="${r.hrs}" oninput="calc()"></td>
-                    <td class="text-center custom-total">0.0</td>
-                </tr>`);
-            });
-            
-            document.querySelectorAll('textarea').forEach(ta => autoResize(ta));
-            closePasteFromGPT();
-            calc();
-        }
-
-        // --- NEW ESTIMATE ---
-        function newEstimate() {
-            if(!confirm("Clear current estimate?")) return;
-            currentEstimateId = null;
-            document.getElementById('quoteRef').value = '';
-            document.getElementById('projName').value = '';
-            document.getElementById('colAddr').value = ""; 
-            document.getElementById('siteAddr').value = '';
-            
-            // RESET NOTES TO DEFAULT
-            document.getElementById('siteNotes').value = 'Installation of products as detailed in the supplied Works Order, delivered in accordance with site requirements and the agreed access conditions.';
-            
-            document.getElementById('specificNotes').value = '';
-            document.getElementById('manualGlobalDays').value = '1';
-            document.getElementById('custom-rows-container').innerHTML = '';
-            addItemRow();
-            document.querySelectorAll('input[type="number"]').forEach(i => i.value = (i.id === 'manualGlobalDays' ? 1 : ''));
-            document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
-            calc();
-            showToast("New Estimate Created");
-        }
-
-        async function saveEstimate(mode) {
-            const refInput = document.getElementById('quoteRef');
-            let ref = refInput.value || "Draft";
-            const proj = document.getElementById('projName').value || "Untitled";
-            const totalVal = document.getElementById('finalTotal').innerText;
-
-            if (mode === 'revision') {
-                const revMatch = ref.match(/-REV(\d+)$/);
-                ref = revMatch ? ref.replace(/-REV\d+$/, `-REV${parseInt(revMatch[1]) + 1}`) : `${ref}-REV1`;
-                refInput.value = ref;
-                document.getElementById('quoteDate').valueAsDate = new Date();
-                currentEstimateId = null;
-            }
-
-            const estimateData = {
-                ref, proj,
-                date: document.getElementById('quoteDate').value,
-                total: totalVal,
-                rows: Array.from(document.querySelectorAll('#custom-rows-container tr')).map(tr => ({
-                    desc: tr.querySelector('textarea').value,
-                    qty: tr.querySelector('.custom-qty').value,
-                    rate: tr.querySelector('.custom-rate').value
-                })),
-                inputs: {},
-                addresses: {
-                    col: document.getElementById('colAddr').value,
-                    site: document.getElementById('siteAddr').value,
-                    notes: document.getElementById('specificNotes').value,
-                    siteNotes: document.getElementById('siteNotes').value
-                }
-            };
-            
-            document.querySelectorAll('input[type="number"], input[type="text"], input[type="checkbox"]').forEach(el => {
-                if(el.id) estimateData.inputs[el.id] = el.type === 'checkbox' ? el.checked : el.value;
-            });
-
-            let error;
-            if (mode === 'update' && currentEstimateId) {
-                const { error: err } = await supabase.from('estimates').update({ ref_code: ref, project_name: proj, data: estimateData }).eq('id', currentEstimateId);
-                error = err;
-            } else {
-                const { data, error: err } = await supabase.from('estimates').insert({ ref_code: ref, project_name: proj, data: estimateData }).select();
-                if(data) currentEstimateId = data[0].id;
-                error = err;
-            }
-
-            if(!error) showToast(mode === 'revision' ? `Created ${ref}!` : "Saved Successfully!");
-            else alert("Error: " + error.message);
-        }
-
-        async function openLibrary() {
-            document.getElementById('library-view').classList.remove('hidden');
-            const list = document.getElementById('lib-list');
-            list.innerHTML = '<tr><td colspan="5" class="text-center p-4">Loading...</td></tr>';
-            const { data, error } = await supabase.from('estimates').select('*').order('created_at', { ascending: false }).limit(50);
-            if(data) { libraryData = data; renderLibrary(data); }
-        }
-
-        function renderLibrary(data) {
-            const list = document.getElementById('lib-list');
-            list.innerHTML = '';
-            data.forEach(est => {
-                const total = est.data.total || '£0.00';
-                const dateStr = new Date(est.created_at).toLocaleDateString();
-                const tr = document.createElement('tr');
-                tr.className = 'lib-row';
-                tr.innerHTML = `
-                    <td>${dateStr}</td>
-                    <td class="font-bold">${est.ref_code}</td>
-                    <td>${est.project_name}</td>
-                    <td>${total}</td>
-                    <td class="flex gap-2">
-                        <button class="bg-blue-100 text-blue-700 px-3 py-1 rounded text-xs font-bold hover:bg-blue-200" onclick="loadEstimate(${est.id})">Load</button>
-                        <button class="bg-red-100 text-red-700 px-3 py-1 rounded text-xs font-bold hover:bg-red-200" onclick="deleteEstimate(${est.id})">🗑</button>
-                    </td>
-                `;
-                list.appendChild(tr);
-            });
-        }
-
-        async function deleteEstimate(id) {
-            if(!confirm("Are you sure you want to permanently delete this estimate?")) return;
-            const { error } = await supabase.from('estimates').delete().eq('id', id);
-            if(!error) {
-                showToast("Estimate Deleted");
-                openLibrary(); 
-            } else {
-                alert("Error deleting: " + error.message);
-            }
-        }
-
-        function filterLibrary() {
-            const term = document.getElementById('lib-search').value.toLowerCase();
-            const filtered = libraryData.filter(est => est.ref_code.toLowerCase().includes(term) || est.project_name.toLowerCase().includes(term));
-            renderLibrary(filtered);
-        }
-
-        function loadEstimate(id) {
-            const est = libraryData.find(e => e.id === id);
-            if(!est) return;
-            const data = est.data;
-            currentEstimateId = id;
-
-            document.getElementById('quoteRef').value = data.ref;
-            document.getElementById('projName').value = data.proj;
-            document.getElementById('quoteDate').value = data.date;
-            document.getElementById('colAddr').value = data.addresses.col;
-            document.getElementById('siteAddr').value = data.addresses.site;
-            document.getElementById('specificNotes').value = data.addresses.notes;
-            document.getElementById('siteNotes').value = data.addresses.siteNotes;
-
-            for (const [key, val] of Object.entries(data.inputs)) {
-                const el = document.getElementById(key);
-                if(el) { if(el.type === 'checkbox') el.checked = val; else el.value = val; }
-            }
-
-            const c = document.getElementById('custom-rows-container');
-            c.innerHTML = '';
-            data.rows.forEach(r => {
-                c.insertAdjacentHTML('beforeend', `<tr class="text-xs border-b border-black"><td class="p-0"><textarea class="cell-input left" oninput="autoResize(this)">${r.desc}</textarea></td><td class="p-0"><input type="number" class="custom-qty cell-input" value="${r.qty}" oninput="calc()"></td><td class="p-0"><input type="number" class="custom-rate cell-input" value="${r.rate}" oninput="calc()"></td><td class="text-center custom-total">0.0</td></tr>`);
-            });
-            
-            document.querySelectorAll('textarea').forEach(ta => autoResize(ta));
-            document.getElementById('library-view').classList.add('hidden');
-            calc();
-            showToast(`Loaded: ${data.ref}`);
-        }
-
-        // RENDER & CALC
+        // --- RENDER SHEET ---
         function renderMainSheet() {
-            const tContainer = document.getElementById('fixed-tasks-container');
-            tContainer.innerHTML = '';
+            // Tasks
+            const tContainer = document.getElementById('fixed-tasks-container'); tContainer.innerHTML = '';
             config.tasks.forEach(t => {
-                if(t.type === 'hrs') {
-                    tContainer.innerHTML += `<tr><td class="bg-gray-50">${t.label}</td><td class="p-0"><input type="number" id="qty_${t.id}" class="cell-input" oninput="calc()"></td><td class="text-center text-gray-500">${t.val}</td><td class="text-center font-bold" id="tot_${t.id}">0.0</td></tr>`;
-                } else if (t.type === 'hrs_check') {
-                    tContainer.innerHTML += `<tr class="bg-row-yellow"><td colspan="3" class="font-bold flex items-center gap-2"><input type="checkbox" id="chk_${t.id}" onchange="calc()" class="w-4 h-4">${t.label} (+${t.val} hr/item)</td><td class="text-center font-bold" id="tot_${t.id}">0.0</td></tr>`;
-                }
+                const rowHtml = t.type === 'hrs' 
+                    ? `<tr><td class="bg-gray-50 dark:bg-gray-800 border-color-inherit">${t.label}</td><td class="p-0"><input type="number" id="qty_${t.id}" class="cell-input" oninput="calc()"></td><td class="text-center text-gray-500">${t.val}</td><td class="text-center font-bold" id="tot_${t.id}">0.0</td></tr>`
+                    : `<tr class="bg-yellow-50 dark:bg-amber-950/40 border-color-inherit print-bg-yellow"><td colspan="3" class="font-bold flex items-center gap-2"><input type="checkbox" id="chk_${t.id}" onchange="calc()" class="w-4 h-4 accent-blue-600">${t.label} (+${t.val} hr/item)</td><td class="text-center font-bold" id="tot_${t.id}">0.0</td></tr>`;
+                tContainer.innerHTML += rowHtml;
             });
 
-            const lContainer = document.getElementById('labour-rows');
-            lContainer.innerHTML = '';
-            config.labour.forEach(l => {
-                lContainer.innerHTML += `<tr><td class="bg-gray-50 pl-2">${l.label}</td><td class="p-0"><input type="number" id="qty_${l.id}" class="cell-input" oninput="calc()"></td><td class="text-center">£${l.val}</td><td class="p-0"><input type="number" id="days_${l.id}" class="cell-input" oninput="calc()"></td><td class="text-right pr-2 font-bold" id="tot_${l.id}">£0.00</td></tr>`;
-            });
+            // Labour
+            const lContainer = document.getElementById('labour-rows'); lContainer.innerHTML = '';
+            config.labour.forEach(l => lContainer.innerHTML += `<tr><td class="bg-gray-50 dark:bg-gray-800 pl-2 border-color-inherit">${l.label}</td><td class="p-0"><input type="number" id="qty_${l.id}" class="cell-input" oninput="calc()"></td><td class="text-center">£${l.val}</td><td class="p-0"><input type="number" id="days_${l.id}" class="cell-input" oninput="calc()"></td><td class="text-right pr-2 font-bold" id="tot_${l.id}">£0.00</td></tr>`);
 
-            const eContainer = document.getElementById('expenses-rows');
-            eContainer.innerHTML = '';
-            const gContainer = document.getElementById('globals-rows');
-            gContainer.innerHTML = '';
+            // Expenses & Globals
+            const eContainer = document.getElementById('expenses-rows'); eContainer.innerHTML = '';
+            const gContainer = document.getElementById('globals-rows'); gContainer.innerHTML = '';
 
             config.expenses.forEach(e => {
                 if (e.label.includes("Parking") || e.label.includes("ULEZ") || e.label.includes("City")) {
-                     gContainer.innerHTML += `<div class="grid grid-cols-[2fr_1fr_1fr] border-b border-black items-center h-8 ${e.label.includes('Parking') ? 'bg-gray-50' : ''}"><div class="px-2 font-bold flex items-center h-full">${e.label}</div><div class="p-0 h-full border-l border-black"><input type="number" id="qty_${e.id}" value="1" class="cell-input" oninput="calc()"></div><div class="px-2 text-right h-full flex items-center justify-end border-l border-black" id="tot_${e.id}">£0.00</div></div>`;
+                     gContainer.innerHTML += `<div class="grid grid-cols-[2fr_1fr_1fr] border-b border-black dark:border-gray-500 items-center h-8 ${e.label.includes('Parking') ? 'bg-gray-50 dark:bg-gray-800' : ''}"><div class="px-2 font-bold flex items-center h-full">${e.label}</div><div class="p-0 h-full border-l border-black dark:border-gray-500"><input type="number" id="qty_${e.id}" value="1" class="cell-input" oninput="calc()"></div><div class="px-2 text-right h-full flex items-center justify-end border-l border-black dark:border-gray-500" id="tot_${e.id}">£0.00</div></div>`;
                 } else {
-                    eContainer.innerHTML += `<tr><td class="font-bold pl-2">${e.label}</td><td class="p-0"><input type="number" id="qty_${e.id}" class="cell-input" oninput="calc()"></td><td class="text-center">£${e.val}</td><td class="text-right pr-2" id="tot_${e.id}">£0.00</td></tr>`;
+                    eContainer.innerHTML += `<tr><td class="font-bold pl-2 border-color-inherit">${e.label}</td><td class="p-0"><input type="number" id="qty_${e.id}" class="cell-input" oninput="calc()"></td><td class="text-center">£${e.val}</td><td class="text-right pr-2" id="tot_${e.id}">£0.00</td></tr>`;
                 }
             });
 
-            const vContainer = document.getElementById('veh-rows');
-            vContainer.innerHTML = '';
+            // Vehicles
+            const vContainer = document.getElementById('veh-rows'); vContainer.innerHTML = '';
             config.vehicles.forEach((v, i) => {
                 const isFirst = i===0 ? 'oninput="syncVehicleAreas(this.value)"' : 'class="cell-input veh-area-slave"';
-                vContainer.innerHTML += `<tr><td class="bg-gray-50 pl-2 text-center">${v.label}</td><td class="text-center">£${v.val}</td><td class="p-0"><input type="number" id="qty_${v.id}" class="cell-input" oninput="calc()"></td><td class="p-0 border-l border-black"><input type="text" class="cell-input text-gray-500" value="London" ${isFirst}></td><td class="text-right pr-2 font-bold" id="tot_${v.id}">£0.00</td></tr>`;
+                vContainer.innerHTML += `<tr><td class="bg-gray-50 dark:bg-gray-800 pl-2 text-center border-color-inherit">${v.label}</td><td class="text-center">£${v.val}</td><td class="p-0"><input type="number" id="qty_${v.id}" class="cell-input" oninput="calc()"></td><td class="p-0 border-l border-black dark:border-gray-500"><input type="text" class="cell-input text-gray-500" value="London" ${isFirst}></td><td class="text-right pr-2 font-bold" id="tot_${v.id}">£0.00</td></tr>`;
             });
 
             document.getElementById('terms-display').innerText = config.terms;
@@ -663,10 +524,17 @@
             document.getElementById('lbl_ooh').innerText = config.globals.find(g=>g.id==='g2').val;
             document.getElementById('lbl_sat').innerText = config.globals.find(g=>g.id==='g3').val;
             document.getElementById('lbl_sun').innerText = config.globals.find(g=>g.id==='g4').val;
+            
+            // Show Logo if loaded
+            if(config.logo) {
+                document.getElementById('logo-display').src = config.logo;
+                document.getElementById('logo-display').classList.remove('hidden');
+            }
         }
 
         function syncVehicleAreas(val) { document.querySelectorAll('.veh-area-slave').forEach(input => input.value = val); }
 
+        // --- CALCULATION ---
         function calc() {
             const val = (id) => parseFloat(document.getElementById(id)?.value) || 0;
             const setTxt = (id, v) => { if(document.getElementById(id)) document.getElementById(id).innerText = v; };
@@ -708,7 +576,7 @@
                 } else {
                     lineCost = qty * item.val;
                 }
-                setTxt(`tot_${item.id}`, `£${lineCost.toFixed(2)}`);
+                setTxt(`tot_${item.id}`, fmtMoney(lineCost));
                 totalMoney += lineCost;
             };
 
@@ -720,25 +588,26 @@
             const satMult = config.globals.find(g=>g.id==='g3').val;
             const sunMult = config.globals.find(g=>g.id==='g4').val;
             
-            setTxt('finalTotal', `£${totalMoney.toFixed(2)}`);
-            setTxt('oohTotal', `£${(totalMoney * oohMult).toFixed(2)}`);
-            setTxt('satTotal', `£${(totalMoney * satMult).toFixed(2)}`);
-            setTxt('sunTotal', `£${(totalMoney * sunMult).toFixed(2)}`);
+            setTxt('finalTotal', fmtMoney(totalMoney));
+            setTxt('oohTotal', fmtMoney(totalMoney * oohMult));
+            setTxt('satTotal', fmtMoney(totalMoney * satMult));
+            setTxt('sunTotal', fmtMoney(totalMoney * sunMult));
         }
 
         function addItemRow() {
             document.getElementById('custom-rows-container').insertAdjacentHTML('beforeend', `
-            <tr class="text-xs border-b border-black">
-                <td class="p-0"><textarea class="cell-input left" oninput="autoResize(this)"></textarea></td>
-                <td class="p-0"><input type="number" class="custom-qty cell-input" value="1" oninput="calc()"></td>
-                <td class="p-0"><input type="number" class="custom-rate cell-input" oninput="calc()"></td>
-                <td class="text-center custom-total">0.0</td>
+            <tr class="text-xs border-b border-black dark:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 group">
+                <td class="p-0 border-color-inherit"><textarea class="cell-input left" oninput="autoResize(this)"></textarea></td>
+                <td class="p-0 border-color-inherit"><input type="number" class="custom-qty cell-input" value="1" oninput="calc()"></td>
+                <td class="p-0 border-color-inherit"><input type="number" class="custom-rate cell-input" oninput="calc()"></td>
+                <td class="text-center custom-total border-color-inherit">0.0</td>
+                <td class="text-center border-none"><button class="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity" onclick="this.closest('tr').remove(); calc();"><i data-lucide="x" class="w-3 h-3"></i></button></td>
             </tr>`);
         }
 
         function autoResize(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
 
-        // --- ADMIN ---
+        // --- ADMIN, SAVE, LIBRARY ---
         function toggleAdmin() { 
             const el = document.getElementById('admin-view'); 
             if(el.classList.contains('hidden')) { renderAdminPanel(); el.classList.remove('hidden'); } else el.classList.add('hidden'); 
@@ -746,62 +615,96 @@
 
         function renderAdminPanel() {
             const renderSection = (containerId, arrName) => {
-                const c = document.getElementById(containerId);
-                c.innerHTML = '';
+                const c = document.getElementById(containerId); c.innerHTML = '';
                 config[arrName].forEach((item, index) => {
                     if(arrName === 'globals') {
                         c.innerHTML += `<div class="admin-row"><span class="text-sm text-gray-300 col-span-2">${item.label}</span><input type="number" class="admin-input-num" value="${item.val}" onchange="updateConfigVal('${arrName}', ${index}, 'val', this.value)"><span></span></div>`;
                         return;
                     }
-                    c.innerHTML += `<div class="admin-row"><input type="text" class="admin-input-text" value="${item.label}" onchange="updateConfigVal('${arrName}', ${index}, 'label', this.value)"><input type="number" class="admin-input-num" value="${item.val}" onchange="updateConfigVal('${arrName}', ${index}, 'val', this.value)"><select class="admin-select" onchange="updateConfigVal('${arrName}', ${index}, 'type', this.value)"><option value="day" ${item.type==='day'?'selected':''}>£/Day</option><option value="fixed" ${item.type==='fixed'?'selected':''}>£ Fixed</option><option value="hrs" ${item.type==='hrs'?'selected':''}>Hrs</option><option value="hrs_check" ${item.type==='hrs_check'?'selected':''}>Hrs(Chk)</option></select><div class="admin-btn-del" onclick="removeRow('${arrName}', ${index})">✕</div></div>`;
+                    c.innerHTML += `<div class="admin-row"><input type="text" class="admin-input-text" value="${item.label}" onchange="updateConfigVal('${arrName}', ${index}, 'label', this.value)"><input type="number" class="admin-input-num" value="${item.val}" onchange="updateConfigVal('${arrName}', ${index}, 'val', this.value)"><select class="admin-select" onchange="updateConfigVal('${arrName}', ${index}, 'type', this.value)"><option value="day" ${item.type==='day'?'selected':''}>£/Day</option><option value="fixed" ${item.type==='fixed'?'selected':''}>£ Fixed</option><option value="hrs" ${item.type==='hrs'?'selected':''}>Hrs</option><option value="hrs_check" ${item.type==='hrs_check'?'selected':''}>Hrs(Chk)</option></select><div class="admin-btn-del" onclick="removeAdmRow('${arrName}', ${index})">✕</div></div>`;
                 });
             };
-            renderSection('adm-labour-list', 'labour');
-            renderSection('adm-tasks-list', 'tasks');
-            renderSection('adm-vehicles-list', 'vehicles');
-            renderSection('adm-expenses-list', 'expenses');
-            renderSection('adm-globals-list', 'globals');
+            renderSection('adm-labour-list', 'labour'); renderSection('adm-tasks-list', 'tasks'); renderSection('adm-vehicles-list', 'vehicles'); renderSection('adm-expenses-list', 'expenses'); renderSection('adm-globals-list', 'globals');
             document.getElementById('adm-terms-input').value = config.terms;
+            
+            // Show logo in Admin
+            if(config.logo) document.getElementById('admin-logo-preview').innerHTML = `<img src="${config.logo}" class="h-full w-full object-contain">`;
+            lucide.createIcons();
         }
 
         function updateConfigVal(arr, idx, field, val) { if(field === 'val') val = parseFloat(val); config[arr][idx][field] = val; }
         function addNewRow(arr) { const id = Date.now().toString().slice(-4); let type = arr === 'labour' ? 'day' : (arr === 'tasks' ? 'hrs' : 'fixed'); config[arr].push({ id: id, label: "New Item", val: 0, type: type }); renderAdminPanel(); }
-        function removeRow(arr, idx) { config[arr].splice(idx, 1); renderAdminPanel(); }
-
-        async function saveAdmin() {
-            config.terms = document.getElementById('adm-terms-input').value;
-            await supabase.from('app_settings').upsert({ id: 1, config: config });
-            toggleAdmin();
-            renderMainSheet();
-            calc();
-            showToast("Admin Settings Saved");
+        function removeAdmRow(arr, idx) { config[arr].splice(idx, 1); renderAdminPanel(); }
+        
+        async function saveAdmin() { 
+            config.terms = document.getElementById('adm-terms-input').value; 
+            await supabase.from('app_settings').upsert({ id: 1, config: config }); 
+            toggleAdmin(); renderMainSheet(); calc(); showToast("Admin Saved"); 
         }
         
-        function resetDefaults() { if(confirm("Reset?")) { localStorage.removeItem('bh_est_config_v22'); location.reload(); } }
+        function newEstimate() { 
+            if(!confirm("Clear estimate?")) return; currentEstimateId = null; 
+            document.getElementById('quoteRef').value=''; document.getElementById('projName').value=''; document.getElementById('clientName').value='';
+            document.getElementById('colAddr').value=''; document.getElementById('siteAddr').value=''; 
+            document.getElementById('siteNotes').value='Installation of products as detailed in the supplied Works Order, delivered in accordance with site requirements and the agreed access conditions.'; 
+            document.getElementById('specificNotes').value=''; document.getElementById('manualGlobalDays').value='1'; 
+            document.getElementById('custom-rows-container').innerHTML=''; addItemRow(); 
+            document.querySelectorAll('input[type="number"]').forEach(i=>i.value=(i.id==='manualGlobalDays'?1:'')); 
+            document.querySelectorAll('input[type="checkbox"]').forEach(c=>c.checked=false); calc(); showToast("New Estimate"); 
+        }
+
+        // GPT PASTE
+        function openPasteFromGPT() { document.getElementById('paste-modal').classList.remove('hidden'); }
+        function closePasteFromGPT() { document.getElementById('paste-modal').classList.add('hidden'); }
+        function applyPasteFromGPT(append) { 
+            const rows = document.getElementById('paste-input').value.trim().split(/\r?\n+/).filter(l=>l.trim()!=='').map(l=>{
+                const p = l.split(/\t+|\s*\|\s*/); return {desc:p[0]||'', qty:parseFloat(p[1])||0, hrs:parseFloat(p[2])||0};
+            });
+            if(!rows.length){alert('Empty');return;}
+            if(!append) document.getElementById('custom-rows-container').innerHTML='';
+            const c = document.getElementById('custom-rows-container');
+            rows.forEach(r=>{
+                const tr=document.createElement('tr'); tr.className='text-xs border-b border-black dark:border-gray-500 group';
+                tr.innerHTML=`<td class="p-0"><textarea class="cell-input left" oninput="autoResize(this)">${r.desc}</textarea></td><td class="p-0"><input type="number" class="custom-qty cell-input" value="${r.qty}" oninput="calc()"></td><td class="p-0"><input type="number" class="custom-rate cell-input" value="${r.hrs}" oninput="calc()"></td><td class="text-center custom-total">0.0</td><td class="text-center border-none"><button class="text-red-400 opacity-0 group-hover:opacity-100" onclick="this.closest('tr').remove();calc()"><i data-lucide="x" class="w-3 h-3"></i></button></td>`;
+                c.appendChild(tr);
+            });
+            closePasteFromGPT(); calc(); lucide.createIcons();
+        }
+
+        // LIBRARY
+        async function openLibrary() { document.getElementById('library-view').classList.remove('hidden'); const { data } = await supabase.from('estimates').select('*').order('created_at',{ascending:false}).limit(50); libraryData=data||[]; renderLibrary(libraryData); }
+        function renderLibrary(data) { 
+            const l=document.getElementById('lib-list'); l.innerHTML=''; 
+            data.forEach(est=>{ 
+                const tr=document.createElement('tr'); tr.className='hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer';
+                tr.innerHTML=`<td class="p-3">${new Date(est.created_at).toLocaleDateString()}</td><td class="p-3 font-bold">${est.ref_code}</td><td class="p-3">${est.project_name}</td><td class="p-3 text-right">${est.data.total||'£0.00'}</td><td class="p-3 flex gap-2 justify-center"><button class="text-blue-500 hover:text-blue-700" onclick="loadEstimate(${est.id})"><i data-lucide="folder-open" class="w-4 h-4"></i></button><button class="text-red-500 hover:text-red-700" onclick="deleteEstimate(${est.id})"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>`;
+                l.appendChild(tr); 
+            });
+            lucide.createIcons();
+        }
+        async function deleteEstimate(id) { if(!confirm("Delete?"))return; await supabase.from('estimates').delete().eq('id',id); openLibrary(); }
+        function filterLibrary() { const t=document.getElementById('lib-search').value.toLowerCase(); renderLibrary(libraryData.filter(e=>e.ref_code.toLowerCase().includes(t)||e.project_name.toLowerCase().includes(t))); }
+        function loadEstimate(id) { const d=libraryData.find(e=>e.id===id).data; currentEstimateId=id; document.getElementById('quoteRef').value=d.ref; document.getElementById('projName').value=d.proj; if(d.client) document.getElementById('clientName').value=d.client; document.getElementById('quoteDate').value=d.date; document.getElementById('colAddr').value=d.addresses.col; document.getElementById('siteAddr').value=d.addresses.site; document.getElementById('siteNotes').value=d.addresses.siteNotes; document.getElementById('specificNotes').value=d.addresses.notes; for(const[k,v] of Object.entries(d.inputs)){ const el=document.getElementById(k); if(el) { if(el.type==='checkbox') el.checked=v; else el.value=v; } } document.getElementById('custom-rows-container').innerHTML=''; d.rows.forEach(r=>{ const tr=document.createElement('tr'); tr.className='text-xs border-b border-black dark:border-gray-500 group'; tr.innerHTML=`<td class="p-0"><textarea class="cell-input left">${r.desc}</textarea></td><td class="p-0"><input type="number" class="custom-qty cell-input" value="${r.qty}" oninput="calc()"></td><td class="p-0"><input type="number" class="custom-rate cell-input" value="${r.rate}" oninput="calc()"></td><td class="text-center custom-total">0.0</td><td class="text-center border-none"><button class="text-red-400 opacity-0 group-hover:opacity-100" onclick="this.closest('tr').remove();calc()"><i data-lucide="x" class="w-3 h-3"></i></button></td>`; document.getElementById('custom-rows-container').appendChild(tr); }); document.getElementById('library-view').classList.add('hidden'); calc(); lucide.createIcons(); showToast("Loaded"); }
+
+        async function saveEstimate(mode) { 
+            const refInput=document.getElementById('quoteRef'); let ref=refInput.value||"Draft"; const proj=document.getElementById('projName').value||"Untitled"; const total=document.getElementById('finalTotal').innerText;
+            if(mode==='revision'){ const m=ref.match(/-REV(\d+)$/); ref=m?ref.replace(/-REV\d+$/, `-REV${parseInt(m[1])+1}`) : `${ref}-REV1`; refInput.value=ref; document.getElementById('quoteDate').valueAsDate=new Date(); currentEstimateId=null; }
+            const data={ ref, proj, client:document.getElementById('clientName').value, date:document.getElementById('quoteDate').value, total, rows:Array.from(document.querySelectorAll('#custom-rows-container tr')).map(tr=>({desc:tr.querySelector('textarea').value, qty:tr.querySelector('.custom-qty').value, rate:tr.querySelector('.custom-rate').value})), inputs:{}, addresses:{ col:document.getElementById('colAddr').value, site:document.getElementById('siteAddr').value, notes:document.getElementById('specificNotes').value, siteNotes:document.getElementById('siteNotes').value } };
+            document.querySelectorAll('input[type="number"], input[type="text"], input[type="checkbox"]').forEach(el=>{ if(el.id) data.inputs[el.id] = el.type==='checkbox' ? el.checked : el.value; });
+            if(mode==='update' && currentEstimateId) await supabase.from('estimates').update({ ref_code:ref, project_name:proj, data }).eq('id',currentEstimateId);
+            else { const {data:res}=await supabase.from('estimates').insert({ ref_code:ref, project_name:proj, data }).select(); if(res) currentEstimateId=res[0].id; }
+            showToast(mode==='revision'?`Created ${ref}`:"Saved");
+        }
 
         function generatePDF() {
             saveEstimate('update');
-            
-            const wasDark = document.body.classList.contains('dark');
-            if(wasDark) document.body.classList.remove('dark');
-
-            const el = document.getElementById('ui-container');
-            const page2 = document.getElementById('page-2');
-            page2.classList.remove('hidden-on-screen');
-            page2.classList.add('pdf-page-break');
-            const btns = document.querySelectorAll('.no-print');
-            btns.forEach(b => b.style.display = 'none');
-            
-            const ref = document.getElementById('quoteRef').value || "Estimate";
-            const proj = document.getElementById('projName').value.replace(/[^a-z0-9]/gi, '-') || "Project";
-            const date = document.getElementById('quoteDate').value;
-            const filename = `${ref}_${proj}_${date}.pdf`;
-
-            html2pdf().set({ margin: 0.2, filename: filename, image: { type: 'jpeg', quality: 1 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' } }).from(el).save().then(() => {
-                 btns.forEach(b => b.style.display = '');
-                 page2.classList.add('hidden-on-screen'); 
-                 page2.classList.remove('pdf-page-break');
-                 if(wasDark) document.body.classList.add('dark');
+            const wasDark = document.body.classList.contains('dark'); if(wasDark) document.body.classList.remove('dark');
+            const el = document.getElementById('ui-container'); const page2 = document.getElementById('page-2');
+            page2.classList.remove('hidden-on-screen'); page2.classList.add('pdf-page-break');
+            const btns = document.querySelectorAll('.no-print'); btns.forEach(b => b.style.display = 'none');
+            const ref = document.getElementById('quoteRef').value || "Est"; const proj = document.getElementById('projName').value.replace(/[^a-z0-9]/gi, '-') || "Proj"; const date = document.getElementById('quoteDate').value;
+            html2pdf().set({ margin: 0.2, filename: `${ref}_${proj}_${date}.pdf`, image: { type: 'jpeg', quality: 1 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' } }).from(el).save().then(() => {
+                 btns.forEach(b => b.style.display = ''); page2.classList.add('hidden-on-screen'); page2.classList.remove('pdf-page-break'); if(wasDark) document.body.classList.add('dark');
             });
         }
     </script>
