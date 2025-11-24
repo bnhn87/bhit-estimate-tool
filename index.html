@@ -3,710 +3,354 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BH Installation Estimate Tool v24</title>
+    <title>BH Estimate Tool v26 (Restored)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { orange: '#c26e30', dark: '#0e1118' },
+                        gray: { 950: '#030712' },
+                        amber: { 950: '#451a03' },
+                        orange: { 950: '#431407' },
+                        slate: { 800: '#1e293b', 900: '#0f172a', 950: '#020617' }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        header: ['Oswald', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
 
     <style>
-        /* BASE THEME */
-        :root {
-            --bg-body: #f3f4f6;
-            --bg-sheet: #ffffff;
-            --text-main: #000000;
-            --border-main: #000000;
-            --input-focus: #eef2ff;
-            
-            /* Headers */
-            --bg-hdr-grey: #e5e7eb;
-            --bg-hdr-green: #d1fae5;
-            --bg-hdr-blue: #dbeafe;
-            --bg-row-blue: #dbeafe;
-            --bg-row-yellow: #fef3c7;
-            --bg-total-orange: #fed7aa;
-        }
-
-        /* DARK THEME */
-        body.dark {
-            --bg-body: #111827;
-            --bg-sheet: #1f2937;
-            --text-main: #e5e7eb;
-            --border-main: #4b5563;
-            --input-focus: #374151;
-            
-            --bg-hdr-grey: #374151;
-            --bg-hdr-green: #064e3b;
-            --bg-hdr-blue: #1e3a8a;
-            --bg-row-blue: #1e3a8a;
-            --bg-row-yellow: #78350f;
-            --bg-total-orange: #7c2d12;
-        }
-
-        body { font-family: 'Arial', sans-serif; background-color: var(--bg-body); color: var(--text-main); transition: background-color 0.3s, color 0.3s; }
+        /* APP STYLES */
+        body { font-family: 'Inter', sans-serif; transition: background-color 0.3s, color 0.3s; }
         
-        /* SHEET CONTAINER */
+        /* MAIN SHEET */
         .sheet-container { 
-            border: 2px solid var(--border-main); 
-            background: var(--bg-sheet); 
+            border: 2px solid #000; 
+            background: #fff; 
             max-width: 1300px; 
             margin: 0 auto; 
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); 
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); 
             margin-bottom: 2rem; 
         }
+        .dark .sheet-container { border-color: #4b5563; background: #1f2937; }
+
+        /* TABLES */
+        table.app-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        table.app-table th, table.app-table td { border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 8px; font-size: 12px; vertical-align: middle; }
+        .dark table.app-table th, .dark table.app-table td { border-color: #4b5563; }
+        table.app-table tr:last-child td { border-bottom: none; }
+        table.app-table th:last-child, table.app-table td:last-child { border-right: none; }
         
-        /* TABLE STYLES */
-        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-        th, td { border-right: 1px solid var(--border-main); border-bottom: 1px solid var(--border-main); padding: 4px; font-size: 12px; vertical-align: middle; }
-        tr:last-child td { border-bottom: none; }
-        td:last-child, th:last-child { border-right: none; }
-        tr:hover td { background-color: rgba(0,0,0,0.02); } /* Subtle hover */
-
-        /* BORDERS & COLORS */
-        .border-b-black { border-bottom-color: var(--border-main) !important; }
-        .border-r-black { border-right-color: var(--border-main) !important; }
-        .border-black { border-color: var(--border-main) !important; }
-        
-        .bg-hdr-grey { background-color: var(--bg-hdr-grey); font-weight: bold; }
-        .bg-hdr-green { background-color: var(--bg-hdr-green); font-weight: bold; text-align: center; }
-        .bg-hdr-blue { background-color: var(--bg-hdr-blue); font-weight: bold; }
-        .bg-row-blue { background-color: var(--bg-row-blue); }
-        .bg-row-yellow { background-color: var(--bg-row-yellow); }
-        .bg-total-orange { background-color: var(--bg-total-orange); }
-
-        /* Dark Mode Text Fixes */
-        body.dark .bg-hdr-green, body.dark .bg-hdr-blue, body.dark .bg-row-blue, body.dark .bg-row-yellow, body.dark .bg-total-orange { color: #e5e7eb; }
-        body.dark input, body.dark textarea { color: #fff; }
-        body.dark ::placeholder { color: #9ca3af; }
-
         /* INPUTS */
-        .cell-input { width: 100%; height: 100%; background: transparent; outline: none; text-align: center; font-family: inherit; font-size: inherit; color: var(--text-main); }
-        .cell-input.left { text-align: left; padding-left: 6px; }
-        .cell-input:focus { background-color: var(--input-focus); box-shadow: inset 0 0 0 2px rgba(59, 130, 246, 0.5); }
-        textarea.cell-input { resize: none; overflow: hidden; min-height: 1.4em; display: block; white-space: pre-wrap; line-height: 1.2; padding-top: 3px; color: var(--text-main); }
+        .cell-input { width: 100%; height: 100%; background: transparent; outline: none; text-align: center; font-family: inherit; font-size: inherit; color: inherit; }
+        .cell-input.left { text-align: left; padding-left: 4px; }
+        .cell-input:focus { background-color: rgba(59, 130, 246, 0.1); }
+        textarea.cell-input { resize: none; overflow: hidden; min-height: 1.2em; display: block; white-space: pre-wrap; line-height: 1.2; padding-top: 2px; }
 
-        /* DELETE BUTTON */
-        .del-btn { color: #ef4444; font-weight: bold; cursor: pointer; opacity: 0; transition: opacity 0.2s; text-align: center; }
-        tr:hover .del-btn { opacity: 1; }
-
-        /* MODALS & TOAST */
-        .admin-modal { background-color: #1a1b26; color: white; }
-        .admin-row { display: grid; grid-template-columns: 1fr 100px 80px 30px; gap: 8px; align-items: center; background: #24283b; padding: 6px; border-radius: 4px; margin-bottom: 6px; border: 1px solid #374151; }
-        .admin-input-text { background: #111827; border: 1px solid #374151; color: white; padding: 4px; border-radius: 4px; width: 100%; }
-        .admin-input-num { background: #111827; border: 1px solid #374151; color: white; text-align: right; padding: 4px; border-radius: 4px; width: 100%; }
-        .admin-select { background: #111827; border: 1px solid #374151; color: #9ca3af; padding: 4px; border-radius: 4px; font-size: 0.75rem; }
+        /* PDF TEMPLATE STYLES (Hidden normally) */
+        #pdf-template { display: none; font-family: 'Inter', sans-serif; color: #000; background: #fff; width: 100%; max-width: 1100px; }
+        #pdf-template h1, #pdf-template h2, #pdf-template h3, #pdf-template .header-title { font-family: 'Oswald', sans-serif; }
         
-        .lib-table th { background-color: var(--bg-hdr-grey); text-align: left; padding: 8px; border-bottom: 2px solid var(--border-main); border-right: none; color: var(--text-main); }
-        .lib-table td { border-bottom: 1px solid var(--border-main); padding: 8px; border-right: none; color: var(--text-main); }
-        .lib-row:hover { background-color: var(--input-focus); cursor: pointer; }
-
+        /* UTILS */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 50; display: flex; align-items: center; justify-content: center; }
+        .hidden { display: none !important; }
+        
+        /* TOAST */
         #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 4px; padding: 16px; position: fixed; z-index: 100; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 14px; }
         #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
         @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
-
-        /* PRINT */
-        .pdf-page-break { page-break-before: always; border-top: 2px solid #000; margin-top: 20px; padding-top: 40px; }
-        .hidden-on-screen { display: none; }
-        .visible-on-pdf { display: block !important; }
-        @media print {
-            body { background: white; margin: 0; color: black; }
-            .no-print, .del-btn { display: none !important; }
-            .sheet-container { box-shadow: none; margin: 0; width: 100%; max-width: none; border: none; }
-            input, textarea, select { border: none; background: transparent; resize: none; appearance: none; color: black; }
-            textarea { height: auto; overflow: visible; }
-            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-        }
     </style>
 </head>
-<body class="p-4">
+<body class="bg-gray-100 text-gray-800 dark:bg-gray-950 dark:text-gray-100 p-4">
 
-    <div class="max-w-[1300px] mx-auto flex justify-between items-center mb-4 no-print bg-white dark:bg-gray-800 p-3 rounded shadow transition-colors duration-300">
+    <div class="max-w-[1300px] mx-auto flex justify-between items-center mb-4 bg-white dark:bg-gray-800 p-3 rounded shadow">
         <div class="flex items-center gap-4">
-            <div>
-                <h1 class="text-xl font-bold text-gray-800 dark:text-white">BH Estimate Tool v24</h1>
-                <p class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                    <span id="db-status" class="w-2 h-2 rounded-full bg-red-500"></span>
-                    <span id="db-text">Connecting...</span>
-                    <span id="current-file-id" class="hidden text-gray-300"></span>
-                </p>
+            <h1 class="text-xl font-bold">BH Estimate Tool v26</h1>
+            <div class="text-xs flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                <span id="db-status" class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                <span id="db-text">Connecting...</span>
             </div>
         </div>
-        <div class="space-x-2 flex items-center">
-            <button onclick="toggleTheme()" class="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white border border-gray-400 dark:border-gray-600 px-3 py-1.5 rounded text-sm font-bold shadow">
-                <span id="theme-icon">🌙</span>
-            </button>
-            <div class="h-6 w-px bg-gray-300 mx-1"></div>
-            <button onclick="newEstimate()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-400 px-4 py-1.5 rounded text-sm font-bold shadow flex items-center gap-2">📄 New</button>
-            <div class="h-6 w-px bg-gray-300 mx-1"></div>
-            <button onclick="openLibrary()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-1.5 rounded text-sm font-bold shadow flex items-center gap-2">📚 Library</button>
-            <button onclick="saveEstimate('update')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm font-bold shadow flex items-center gap-2">💾 Save</button>
-            <button onclick="saveEstimate('revision')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded text-sm font-bold shadow flex items-center gap-2">📋 Rev+</button>
-            <div class="h-6 w-px bg-gray-300 mx-1"></div>
-            <button onclick="toggleAdmin()" class="bg-gray-800 hover:bg-black text-white px-4 py-1.5 rounded text-sm font-bold shadow">⚙️ Admin</button>
-            <button onclick="generatePDF()" class="bg-gray-700 hover:bg-gray-900 text-white px-4 py-1.5 rounded text-sm font-bold shadow">Download PDF</button>
+        <div class="flex items-center gap-2">
+            <button onclick="toggleTheme()" class="p-2 rounded border dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"><i data-lucide="sun" class="w-4 h-4 dark:text-yellow-400"></i></button>
+            <div class="h-6 w-px bg-gray-300 mx-2"></div>
+            <button onclick="newEstimate()" class="px-3 py-1.5 text-xs font-bold bg-gray-200 text-gray-800 rounded hover:bg-gray-300">New</button>
+            <button onclick="openLibrary()" class="px-3 py-1.5 text-xs font-bold bg-purple-600 text-white rounded hover:bg-purple-700">Library</button>
+            <button onclick="saveEstimate('update')" class="px-3 py-1.5 text-xs font-bold bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
+            <button onclick="saveEstimate('revision')" class="px-3 py-1.5 text-xs font-bold bg-green-600 text-white rounded hover:bg-green-700">Rev+</button>
+            <div class="h-6 w-px bg-gray-300 mx-2"></div>
+            <button onclick="toggleAdmin()" class="px-3 py-1.5 text-xs font-bold bg-gray-800 text-white rounded hover:bg-gray-900">Admin</button>
+            <button onclick="generatePDF()" class="px-3 py-1.5 text-xs font-bold bg-brand-orange text-white rounded shadow-lg hover:bg-orange-700">Download PDF</button>
         </div>
     </div>
 
-    <div id="ui-container" class="sheet-container transition-colors duration-300">
-        <div id="page-1">
-            <div class="text-center py-4 border-b-2 border-black relative">
-                <img id="logo-display" class="h-12 absolute left-4 top-4 hidden" alt="Logo">
-                <h1 class="text-3xl font-bold">BH Installation & Transport</h1>
-            </div>
+    <div id="ui-container" class="sheet-container">
+        <div class="text-center py-4 border-b-2 border-black dark:border-gray-600">
+            <h1 class="text-3xl font-bold header-font">BH Installation & Transport</h1>
+        </div>
 
-            <div class="grid grid-cols-[1fr_2fr_1fr_1fr] border-b-2 border-black">
-                <div class="p-2 border-r-black bg-hdr-grey text-xs flex items-center font-bold">Estimate ref:</div>
-                <div class="p-0 border-r-black"><input type="text" id="quoteRef" class="cell-input left font-bold" placeholder="Ref..."></div>
-                <div class="p-2 border-r-black bg-hdr-grey text-xs flex items-center justify-end font-bold">Estimate date:</div>
-                <div class="p-0"><input type="date" id="quoteDate" class="cell-input px-2 text-right"></div>
-            </div>
-            
-            <div class="grid grid-cols-[1fr_2fr_1fr_2fr] border-b-2 border-black">
-                <div class="p-2 border-r-black bg-hdr-grey text-xs flex items-center font-bold">Client:</div>
-                <div class="p-0 border-r-black"><input type="text" id="clientName" class="cell-input left font-bold" placeholder="Client Company Name..."></div>
-                <div class="p-2 border-r-black bg-hdr-grey text-xs flex items-center font-bold">Project:</div>
-                <div class="p-0"><input type="text" id="projName" class="cell-input left font-bold" placeholder="Project Name"></div>
-            </div>
+        <div class="grid grid-cols-[1fr_2fr_1fr_1fr] border-b-2 border-black dark:border-gray-600 divide-x divide-black dark:divide-gray-600">
+            <div class="p-2 font-bold text-xs bg-gray-200 dark:bg-gray-700 flex items-center">Estimate Ref:</div>
+            <div class="p-0"><input type="text" id="quoteRef" class="cell-input left font-bold px-2" placeholder="Ref..."></div>
+            <div class="p-2 font-bold text-xs text-right bg-gray-200 dark:bg-gray-700 flex items-center justify-end">Date:</div>
+            <div class="p-0"><input type="date" id="quoteDate" class="cell-input px-2 text-right"></div>
+        </div>
+        <div class="grid grid-cols-[1fr_2fr_1fr_2fr] border-b-2 border-black dark:border-gray-600 divide-x divide-black dark:divide-gray-600">
+            <div class="p-2 font-bold text-xs bg-gray-200 dark:bg-gray-700 flex items-center">Client:</div>
+            <div class="p-0"><input type="text" id="clientName" class="cell-input left font-bold px-2" placeholder="Client Name..."></div>
+            <div class="p-2 font-bold text-xs bg-gray-200 dark:bg-gray-700 flex items-center">Project:</div>
+            <div class="p-0"><input type="text" id="projName" class="cell-input left font-bold px-2" placeholder="Project Name..."></div>
+        </div>
 
-            <div class="flex border-b-2 border-black">
-                <div class="w-full flex">
-                    <div class="bg-total-orange font-bold text-xs p-2 flex items-center border-r-black w-1/3">Estimate valid to (90 days):</div>
-                    <div class="font-bold text-xs p-2 bg-sheet flex-grow" id="validDate"></div>
+        <div class="flex border-b-2 border-black dark:border-gray-600">
+            <div class="w-full flex">
+                <div class="bg-total-orange font-bold text-xs p-2 flex items-center border-r border-black dark:border-gray-600 w-1/3">Estimate valid to (90 days):</div>
+                <div class="font-bold text-xs p-2 bg-white dark:bg-gray-900 flex-grow flex items-center" id="validDate"></div>
+            </div>
+        </div>
+
+        <div class="flex border-b-2 border-black dark:border-gray-600">
+            <div class="w-5/12 border-r-2 border-black dark:border-gray-600 flex flex-col">
+                <table class="app-table">
+                    <colgroup><col style="width: 50%"><col style="width: 15%"><col style="width: 15%"><col style="width: 20%"><col style="width: 5%"></colgroup>
+                    <thead><tr class="text-xs bg-blue-100 dark:bg-blue-900"><th>Items</th><th>Qty</th><th>Hrs</th><th>Total</th><th class="bg-white dark:bg-gray-900 border-none"></th></tr></thead>
+                    <tbody id="custom-rows-container"></tbody>
+                </table>
+                <div class="p-1 text-center bg-gray-50 dark:bg-gray-800 space-x-2 border-b border-black dark:border-gray-600">
+                    <button onclick="addItemRow()" class="text-[10px] text-blue-600 font-bold">+ Row</button>
+                    <button onclick="openPasteFromGPT()" class="text-[10px] text-amber-600 font-bold">Paste Table</button>
+                </div>
+                <table class="app-table border-b-2 border-black dark:border-gray-600">
+                    <colgroup><col style="width: 50%"><col style="width: 15%"><col style="width: 15%"><col style="width: 20%"></colgroup>
+                    <tbody id="fixed-tasks-container" class="text-xs"></tbody>
+                </table>
+                
+                <div class="bg-gray-100 dark:bg-gray-800 border-b border-black dark:border-gray-600 p-2 flex justify-between items-center font-bold text-sm">
+                    <span>Total Hours</span><span id="grandTotalHrs">0.0</span>
+                </div>
+                <div class="bg-blue-50 dark:bg-blue-900/30 p-2 flex justify-between items-center border-b border-black dark:border-gray-600">
+                    <span class="text-xs font-bold">Manual Days on Site:</span>
+                    <input type="number" id="manualGlobalDays" value="1" class="w-16 text-center border border-gray-400 rounded bg-white dark:bg-gray-900 font-bold" oninput="calc()">
+                </div>
+                
+                <div class="flex-grow flex flex-col bg-blue-50 dark:bg-blue-900/20 min-h-[150px]">
+                    <div class="p-1 text-[10px] font-bold border-b border-gray-300 dark:border-gray-600 mx-2 mt-1 opacity-70">Site notes / Scope of works</div>
+                    <textarea id="siteNotes" class="w-full flex-grow bg-transparent p-2 text-sm resize-none outline-none">Installation of products as detailed in the supplied Works Order, delivered in accordance with site requirements and the agreed access conditions.</textarea>
                 </div>
             </div>
 
-            <div class="flex">
-                <div class="w-5/12 border-r-2 border-black flex flex-col">
-                    
-                    <table class="w-full">
-                        <colgroup>
-                            <col style="width: 50%">
-                            <col style="width: 15%">
-                            <col style="width: 15%">
-                            <col style="width: 15%">
-                            <col style="width: 5%"> </colgroup>
-                        <thead>
-                            <tr class="text-xs">
-                                <th class="bg-hdr-blue">Items</th>
-                                <th class="bg-hdr-green">QTY</th>
-                                <th class="bg-hdr-green">HRS</th>
-                                <th class="bg-hdr-green">Total</th>
-                                <th class="bg-sheet border-none"></th>
-                            </tr>
-                        </thead>
-                        <tbody id="custom-rows-container"></tbody>
-                    </table>
-                    
-                    <div class="no-print p-1 border-b-black text-center bg-gray-50 dark:bg-gray-700 space-x-2">
-                        <button onclick="addItemRow()" class="text-[10px] bg-blue-600 text-white px-4 py-1 rounded font-bold hover:bg-blue-700">+ Add Item Row</button>
-                        <button onclick="openPasteFromGPT()" class="text-[10px] bg-amber-600 text-white px-4 py-1 rounded font-bold hover:bg-amber-700">Paste from GPT</button>
+            <div class="w-7/12 flex flex-col">
+                <div class="flex h-24 border-b-2 border-black dark:border-gray-600">
+                    <div class="w-1/2 border-r border-black dark:border-gray-600 p-2 flex flex-col">
+                        <div class="text-[10px] font-bold mb-1 text-center">Collection Address</div>
+                        <textarea id="colAddr" class="w-full flex-grow bg-transparent resize-none text-xs text-center font-bold"></textarea>
                     </div>
-
-                    <table class="w-full border-b-2 border-black">
-                        <colgroup>
-                            <col style="width: 50%">
-                            <col style="width: 15%">
-                            <col style="width: 15%">
-                            <col style="width: 20%">
-                        </colgroup>
-                        <tbody id="fixed-tasks-container" class="text-xs"></tbody>
-                    </table>
-
-                    <div class="grid grid-cols-[1fr_60px] border-b-black">
-                        <div class="p-2 border-r-black text-right font-bold bg-hdr-grey text-sm flex items-center justify-end">Total Hours</div>
-                        <div class="p-2 text-center font-bold text-lg flex items-center justify-center" id="grandTotalHrs">0.0</div>
-                    </div>
-                    <div class="grid grid-cols-[1fr_60px] border-b-2 border-black">
-                        <div class="p-2 border-r-black text-right text-xs bg-hdr-grey flex items-center justify-end">Labour in Days (<span id="lbl_dayHrs">7.25</span>hr)</div>
-                        <div class="p-2 text-center font-bold text-lg flex items-center justify-center" id="grandTotalDays">0.00</div>
-                    </div>
-                    
-                    <div class="bg-row-blue border-b-2 border-black p-2 flex items-center justify-between">
-                        <span class="font-bold text-sm">Manual Days on Site:</span>
-                        <input type="number" id="manualGlobalDays" value="1" class="w-20 p-1 text-center border border-black font-bold bg-sheet" oninput="calc()">
-                    </div>
-                    
-                    <div class="flex-grow flex flex-col min-h-[100px] bg-row-blue">
-                        <div class="p-1 text-xs font-bold border-b border-gray-400 ml-2 opacity-70">Site notes/Scope of works</div>
-                        <textarea id="siteNotes" class="w-full flex-grow bg-transparent p-2 resize-none text-sm placeholder-gray-500 dark:placeholder-gray-300">Installation of products as detailed in the supplied Works Order, delivered in accordance with site requirements and the agreed access conditions.</textarea>
+                    <div class="w-1/2 p-2 flex flex-col">
+                        <div class="text-[10px] font-bold mb-1 text-center">Site Address</div>
+                        <textarea id="siteAddr" class="w-full flex-grow bg-transparent resize-none text-xs text-center font-bold"></textarea>
                     </div>
                 </div>
+                
+                <table class="app-table">
+                    <thead><tr class="bg-gray-200 dark:bg-gray-700 text-xs"><th>Role</th><th>Installers</th><th>Cost/Day</th><th>Days</th><th>Total</th></tr></thead>
+                    <tbody id="labour-rows" class="text-xs"></tbody>
+                </table>
+                <table class="app-table border-t-0">
+                    <tbody id="expenses-rows" class="text-xs"></tbody>
+                </table>
+                <table class="app-table border-t-0">
+                    <thead><tr class="bg-gray-200 dark:bg-gray-700 text-xs"><th>Size</th><th>Cost</th><th>Qty</th><th>Area</th><th>Total</th></tr></thead>
+                    <tbody id="veh-rows" class="text-xs"></tbody>
+                </table>
 
-                <div class="w-7/12 flex flex-col">
-                    <div class="flex h-32 border-b-2 border-black">
-                        <div class="w-1/2 border-r-2 border-black bg-row-blue flex flex-col">
-                            <div class="text-xs text-center p-1 border-b-black">Collection Address</div>
-                            <div class="flex-grow flex items-center justify-center p-2 text-center text-sm font-bold"><textarea id="colAddr" class="w-full h-full bg-transparent text-center resize-none placeholder-gray-500 dark:placeholder-gray-300" placeholder="Enter Collection Address..."></textarea></div>
+                <div class="flex flex-grow">
+                    <div class="w-7/12 border-r border-black dark:border-gray-600" id="globals-rows"></div>
+                    <div class="w-5/12 bg-orange-100 dark:bg-orange-900/40 flex flex-col justify-end p-2">
+                        <div class="flex justify-between text-lg font-bold border-b border-black dark:border-gray-600 pb-1">
+                            <span>Total</span><span id="finalTotal">£0.00</span>
                         </div>
-                        <div class="w-1/2 bg-row-blue flex flex-col">
-                            <div class="text-xs text-center p-1 border-b-black">Site / Delivery Address</div>
-                            <div class="flex-grow p-2"><textarea id="siteAddr" class="w-full h-full bg-transparent text-center resize-none placeholder-gray-500 dark:placeholder-gray-300 font-bold" placeholder="Enter Site Address..."></textarea></div>
+                        <div class="text-[10px] space-y-1 mt-1 opacity-80 font-mono">
+                            <div class="flex justify-between"><span>OOH (x<span id="lbl_ooh">1.6</span>)</span><span id="oohTotal">£0.00</span></div>
+                            <div class="flex justify-between"><span>Sat (x<span id="lbl_sat">1.75</span>)</span><span id="satTotal">£0.00</span></div>
+                            <div class="flex justify-between"><span>Sun (x<span id="lbl_sun">2.0</span>)</span><span id="sunTotal">£0.00</span></div>
                         </div>
-                    </div>
-                    <div class="bg-row-yellow border-b-2 border-black p-2 h-20"><textarea id="specificNotes" class="w-full h-full bg-transparent resize-none text-xs placeholder-gray-600 dark:placeholder-gray-300" placeholder="Site specific notes..."></textarea></div>
-                    
-                    <table class="w-full border-b-black">
-                        <colgroup><col style="width: 40%"><col style="width: 15%"><col style="width: 15%"><col style="width: 15%"><col style="width: 15%"></colgroup>
-                        <thead><tr class="text-[10px] uppercase tracking-wider bg-gray-200 dark:bg-gray-700 font-bold print-bg-grey"><th>Role</th><th>Installers</th><th>Cost/Day</th><th>Days</th><th>Total</th></tr></thead>
-                        <tbody id="labour-rows" class="text-xs border-color-inherit"></tbody>
-                    </table>
-                    <table class="w-full border-b-black">
-                        <colgroup><col style="width: 55%"><col style="width: 15%"><col style="width: 15%"><col style="width: 15%"></colgroup>
-                        <tbody id="expenses-rows" class="text-xs border-color-inherit"></tbody>
-                    </table>
-                    <table class="w-full border-b-black">
-                        <colgroup><col style="width: 25%"><col style="width: 20%"><col style="width: 15%"><col style="width: 20%"><col style="width: 20%"></colgroup>
-                        <thead><tr class="text-[10px] uppercase tracking-wider bg-gray-200 dark:bg-gray-700 font-bold print-bg-grey"><th>Size</th><th>Cost</th><th>Qty</th><th>Area</th><th>Total</th></tr></thead>
-                        <tbody id="veh-rows" class="text-xs border-color-inherit"></tbody>
-                    </table>
-
-                    <div class="flex flex-grow">
-                        <div class="w-7/12 border-r-2 border-black flex flex-col text-xs" id="globals-rows"></div>
-                        <div class="w-5/12 bg-orange-100 dark:bg-orange-950/60 flex flex-col justify-end print-bg-orange">
-                            <div class="flex justify-between items-center p-3 border-b border-black dark:border-gray-500">
-                                <span class="font-bold text-lg">Total</span>
-                                <span class="font-bold text-2xl" id="finalTotal">£0.00</span>
-                            </div>
-                            <div class="p-2 space-y-1 text-xs font-mono opacity-80">
-                                <div class="flex justify-between"><span>OOH (x<span id="lbl_ooh">1.6</span>)</span><span id="oohTotal">£0.00</span></div>
-                                <div class="flex justify-between"><span>Sat (x<span id="lbl_sat">1.75</span>)</span><span id="satTotal">£0.00</span></div>
-                                <div class="flex justify-between"><span>Sun (x<span id="lbl_sun">2.0</span>)</span><span id="sunTotal">£0.00</span></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="border-t-2 border-black dark:border-gray-500 flex bg-white dark:bg-gray-900">
-                <div class="w-8/12 p-2 text-[10px] leading-tight border-r-2 border-black dark:border-gray-500 text-gray-500">
-                    <strong>Note:</strong> T&Cs are attached on the following page.
-                </div>
-                <div class="w-4/12 flex flex-col">
-                    <div class="text-[10px] font-bold text-center border-b border-black dark:border-gray-500 p-1 bg-gray-100 dark:bg-gray-800 print-bg-grey">Estimate Issued By</div>
-                    <div class="flex-grow flex items-center justify-center p-2">
-                        <input type="text" value="Ben Hone" class="text-center font-bold text-xl w-full bg-transparent focus:outline-none">
                     </div>
                 </div>
             </div>
         </div>
+        
+        <div class="border-t-2 border-black dark:border-gray-600 flex bg-white dark:bg-gray-900">
+            <div class="w-8/12 p-2 text-[10px] leading-tight border-r-2 border-black dark:border-gray-600 text-gray-500">
+                <strong>Note:</strong> T&Cs are attached on the following page.
+            </div>
+            <div class="w-4/12 flex flex-col">
+                <div class="text-[10px] font-bold text-center border-b border-black dark:border-gray-600 p-1 bg-gray-100 dark:bg-gray-800">Estimate Issued By</div>
+                <div class="flex-grow flex items-center justify-center p-2">
+                    <input type="text" value="Ben Hone" class="text-center font-bold text-xl w-full bg-transparent focus:outline-none">
+                </div>
+            </div>
+        </div>
+    </div>
 
-        <div id="page-2" class="hidden-on-screen p-12 bg-sheet transition-colors duration-300">
-            <h2 class="text-2xl font-bold border-b-2 border-black pb-4 mb-6">Terms & Conditions of Business</h2>
-            <div id="terms-display" class="text-sm text-justify whitespace-pre-wrap leading-relaxed text-gray-800 dark:text-gray-300"></div>
+    <div id="pdf-template">
+        <div class="w-full h-2 bg-[#c26e30]"></div>
+        <div class="p-8 flex justify-between items-center border-b border-gray-200">
+            <div class="flex items-center gap-4"><img id="pdf-logo" class="w-16 h-16 object-contain hidden"></div>
+            <div class="text-right">
+                <h2 class="text-3xl font-bold uppercase tracking-tight font-header"><span class="text-[#c26e30]">Estimate</span> <span class="text-gray-400 text-lg"> // </span> <span id="pdf-ref" class="text-gray-800 font-mono">REF</span></h2>
+                <div class="mt-1 text-xs text-gray-500 font-sans"><p>Date Issued: <span id="pdf-date" class="text-gray-900 font-semibold"></span></p><p>Valid Until: <span id="pdf-valid" class="text-gray-900"></span></p></div>
+            </div>
+        </div>
+        <div class="grid grid-cols-2 gap-8 px-8 py-6 bg-gray-50 border-b border-gray-200 text-sm font-sans">
+            <div><p class="text-xs uppercase text-gray-400 tracking-wider mb-1">Estimate For</p><p id="pdf-client" class="text-lg font-bold text-gray-900">Client Name</p><p id="pdf-site-addr" class="text-gray-600 whitespace-pre-wrap">Site Address...</p></div>
+            <div class="text-right"><p class="text-xs uppercase text-gray-400 tracking-wider mb-1">Project</p><p id="pdf-project" class="text-lg font-bold text-gray-900">Project Name</p><p class="text-gray-500 italic">Prepared by: BH Installation & Transport</p></div>
+        </div>
+        <div class="p-8 space-y-8 font-sans">
+            <section><h3 class="text-[#c26e30] text-xs font-bold uppercase tracking-widest mb-2">Scope of Works</h3><div id="pdf-scope" class="p-4 bg-gray-50 border border-gray-200 rounded text-sm text-gray-700 whitespace-pre-wrap leading-relaxed"></div></section>
+            <section>
+                <div class="flex justify-between items-end mb-2"><h3 class="text-[#c26e30] text-xs font-bold uppercase tracking-widest">Breakdown</h3></div>
+                <table class="w-full text-sm border border-gray-200 rounded overflow-hidden">
+                    <thead class="bg-gray-800 text-white text-xs uppercase"><tr><th class="px-4 py-2 text-left">Description</th><th class="px-4 py-2 text-center w-16">Qty</th><th class="px-4 py-2 text-center w-16">Hrs</th><th class="px-4 py-2 text-right w-24">Total Hrs</th></tr></thead>
+                    <tbody id="pdf-item-rows" class="divide-y divide-gray-100 text-gray-700"></tbody>
+                    <tfoot class="bg-gray-50 font-bold text-gray-900"><tr><td colspan="3" class="px-4 py-2 text-right text-xs uppercase text-gray-500">Total Est. Hours</td><td id="pdf-total-hrs" class="px-4 py-2 text-right text-[#c26e30]">0.0</td></tr></tfoot>
+                </table>
+            </section>
+            <section class="grid grid-cols-2 gap-6">
+                <div class="text-xs"><h4 class="font-bold text-gray-900 border-b border-gray-200 pb-1 mb-2">Supplementary & Labour</h4><ul id="pdf-charges-list" class="space-y-1 text-gray-600"></ul></div>
+                <div class="space-y-4">
+                    <div class="bg-gray-800 text-white p-4 rounded border border-gray-700"><p class="text-xs uppercase text-gray-400 tracking-wider">Total Estimated Cost (ex VAT)</p><p id="pdf-final-total" class="text-3xl font-bold text-[#c26e30]">£0.00</p></div>
+                    <div class="bg-gray-50 p-3 rounded border border-gray-200 flex justify-between items-center"><span class="text-xs uppercase text-gray-500 font-bold">Est. Labour Days</span><span id="pdf-labour-days" class="text-sm font-mono font-bold text-gray-900">0.0</span></div>
+                </div>
+            </section>
+            <section class="mt-8 pt-8 border-t border-gray-200 text-[10px] text-gray-500 leading-relaxed"><h3 class="text-[#c26e30] font-bold uppercase tracking-widest mb-2">Terms & Conditions</h3><div id="pdf-terms" class="whitespace-pre-wrap text-justify"></div><div class="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center"><strong>BHi - Your Plan. Delivered.</strong><span>Tel: 07862043271 &middot; Email: info@bhit.uk</span></div></section>
+        </div>
+    </div>
+
+    <div id="admin-view" class="modal-overlay hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-2xl p-6 w-[1000px] h-[90vh] flex flex-col text-gray-900 dark:text-gray-100">
+            <div class="flex justify-between mb-4 border-b pb-2"><h2 class="text-xl font-bold">Admin</h2><button onclick="toggleAdmin()">✕</button></div>
+            <div class="overflow-y-auto flex-grow grid grid-cols-2 gap-6">
+                <div class="col-span-2 bg-gray-50 dark:bg-gray-900 p-4 rounded border dark:border-gray-700">
+                    <div class="font-bold mb-2">Company Logo</div><input type="file" accept="image/*" onchange="handleLogoUpload(this)" class="text-xs"><img id="admin-logo-preview" class="h-10 mt-2 object-contain">
+                </div>
+                <div id="adm-labour-list" class="space-y-2"></div>
+                <div id="adm-tasks-list" class="space-y-2"></div>
+                <div id="adm-vehicles-list" class="space-y-2"></div>
+                <div id="adm-expenses-list" class="space-y-2"></div>
+                <div id="adm-globals-list" class="space-y-2"></div>
+                <div class="col-span-2"><label>Terms</label><textarea id="adm-terms-input" class="w-full h-32 bg-gray-50 dark:bg-gray-900 border p-2 text-xs"></textarea></div>
+            </div>
+            <button onclick="saveAdmin()" class="mt-4 w-full bg-blue-600 text-white py-2 rounded font-bold">Save Changes</button>
         </div>
     </div>
 
     <div id="toast">Saved!</div>
 
-    <div id="paste-modal" class="modal-overlay hidden">
-      <div class="modal-content w-[600px] max-h-[80vh] p-6">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-lg font-bold flex items-center gap-2"><i data-lucide="clipboard"></i> Paste Table</h2>
-          <button onclick="closePasteFromGPT()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"><i data-lucide="x"></i></button>
-        </div>
-        <p class="text-xs text-gray-500 mb-2">Supported columns: Description, Qty, Hours</p>
-        <textarea id="paste-input" class="w-full h-48 border border-gray-300 dark:border-gray-600 text-xs p-3 font-mono bg-gray-50 dark:bg-gray-900 rounded focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
-        <div class="flex justify-end mt-4 space-x-2">
-          <button onclick="applyPasteFromGPT(true)" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded text-xs font-bold hover:opacity-80">Append</button>
-          <button onclick="applyPasteFromGPT(false)" class="px-4 py-2 bg-blue-600 text-white rounded text-xs font-bold hover:bg-blue-700">Replace</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="library-view" class="modal-overlay hidden">
-        <div class="modal-content p-6">
-            <div class="flex justify-between items-center mb-4 border-b dark:border-gray-700 pb-3">
-                <h3 class="text-xl font-bold flex items-center gap-2"><i data-lucide="library"></i> Estimate Library</h3>
-                <button onclick="document.getElementById('library-view').classList.add('hidden')" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"><i data-lucide="x"></i></button>
-            </div>
-            <div class="mb-4 relative">
-                <i data-lucide="search" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
-                <input type="text" id="lib-search" class="w-full border dark:border-gray-600 pl-9 p-2 rounded bg-gray-50 dark:bg-gray-900 focus:ring-2 focus:ring-purple-500 outline-none" placeholder="Search Project or Ref..." oninput="filterLibrary()">
-            </div>
-            <div class="flex-grow overflow-y-auto border dark:border-gray-700 rounded">
-                <table class="w-full lib-table">
-                    <thead>
-                        <tr class="bg-gray-100 dark:bg-gray-800 text-left">
-                            <th class="p-3 w-24">Date</th>
-                            <th class="p-3 w-32">Ref</th>
-                            <th class="p-3">Project</th>
-                            <th class="p-3 w-24 text-right">Total</th>
-                            <th class="p-3 w-32 text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="lib-list" class="divide-y divide-gray-200 dark:divide-gray-700"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <div id="admin-view" class="modal-overlay hidden">
-        <div class="modal-content p-0 h-[90vh] overflow-hidden">
-            <div class="flex justify-between items-center p-4 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-                <h2 class="text-xl font-bold flex items-center gap-2"><i data-lucide="settings-2"></i> Admin Configuration</h2>
-                <button onclick="toggleAdmin()" class="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"><i data-lucide="x"></i></button>
-            </div>
-            <div class="grid grid-cols-2 gap-6 overflow-y-auto p-6 flex-grow bg-gray-100 dark:bg-gray-800">
-                <div class="col-span-2 bg-white dark:bg-gray-900 p-4 rounded shadow-sm border dark:border-gray-700">
-                    <div class="admin-header text-gray-600 dark:text-gray-400">Company Settings</div>
-                    <div class="flex items-center gap-4">
-                        <div class="flex-grow">
-                            <label class="block text-xs mb-1">Company Logo (Appears on PDF)</label>
-                            <input type="file" accept="image/*" onchange="handleLogoUpload(this)" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                        </div>
-                        <div id="admin-logo-preview" class="w-16 h-16 border flex items-center justify-center bg-gray-50 text-xs text-gray-400">No Logo</div>
-                    </div>
-                </div>
-
-                <div class="space-y-6">
-                    <div class="bg-white dark:bg-gray-900 p-4 rounded shadow-sm border dark:border-gray-700">
-                        <div class="admin-header text-blue-600 dark:text-blue-400">Labour <button class="admin-btn-add" onclick="addNewRow('labour')">+ Add</button></div>
-                        <div id="adm-labour-list" class="space-y-2"></div>
-                    </div>
-                    <div class="bg-white dark:bg-gray-900 p-4 rounded shadow-sm border dark:border-gray-700">
-                        <div class="admin-header text-purple-600 dark:text-purple-400">Scope Items <button class="admin-btn-add" onclick="addNewRow('tasks')">+ Add</button></div>
-                        <div id="adm-tasks-list" class="space-y-2"></div>
-                    </div>
-                </div>
-                <div class="space-y-6">
-                    <div class="bg-white dark:bg-gray-900 p-4 rounded shadow-sm border dark:border-gray-700">
-                        <div class="admin-header text-green-600 dark:text-green-400">Vehicles <button class="admin-btn-add" onclick="addNewRow('vehicles')">+ Add</button></div>
-                        <div id="adm-vehicles-list" class="space-y-2"></div>
-                    </div>
-                    <div class="bg-white dark:bg-gray-900 p-4 rounded shadow-sm border dark:border-gray-700">
-                        <div class="admin-header text-red-600 dark:text-red-400">Expenses <button class="admin-btn-add" onclick="addNewRow('expenses')">+ Add</button></div>
-                        <div id="adm-expenses-list" class="space-y-2"></div>
-                    </div>
-                    <div class="bg-white dark:bg-gray-900 p-4 rounded shadow-sm border dark:border-gray-700">
-                        <div class="admin-header text-orange-600 dark:text-orange-400">Globals</div>
-                        <div id="adm-globals-list" class="space-y-2"></div>
-                    </div>
-                </div>
-                <div class="col-span-2 bg-white dark:bg-gray-900 p-4 rounded shadow-sm border dark:border-gray-700">
-                    <div class="admin-header text-yellow-600 dark:text-yellow-400">Terms & Conditions</div>
-                    <textarea id="adm-terms-input" class="w-full h-32 bg-gray-50 dark:bg-gray-800 p-3 rounded border dark:border-gray-600 text-xs font-mono focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
-                </div>
-            </div>
-            <div class="p-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex justify-between items-center">
-                <button onclick="resetDefaults()" class="text-red-500 hover:text-red-700 text-sm font-bold">Reset Defaults</button>
-                <button onclick="saveAdmin()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-2 rounded shadow flex items-center gap-2"><i data-lucide="save"></i> Save Changes</button>
-            </div>
-        </div>
-    </div>
-
-    <style>
-        .btn-action { @apply flex items-center gap-1.5 px-3 py-1.5 rounded border shadow-sm text-xs font-bold transition-all; }
-        .admin-header { @apply font-bold text-sm mb-3 pb-2 border-b dark:border-gray-700 flex justify-between items-center; }
-        .admin-row { @apply grid gap-2 items-center bg-gray-50 dark:bg-gray-800 p-2 rounded border dark:border-gray-700; grid-template-columns: 1fr 80px 80px 30px; }
-        .admin-input-text { @apply bg-white dark:bg-gray-700 border dark:border-gray-600 rounded px-2 py-1 text-xs w-full; }
-        .admin-input-num { @apply bg-white dark:bg-gray-700 border dark:border-gray-600 rounded px-2 py-1 text-xs text-right w-full; }
-        .admin-select { @apply bg-white dark:bg-gray-700 border dark:border-gray-600 rounded px-1 py-1 text-[10px]; }
-        .admin-btn-del { @apply text-red-500 hover:text-red-700 cursor-pointer text-center flex justify-center; }
-        .admin-btn-add { @apply bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-[10px] px-2 py-0.5 rounded hover:bg-gray-300 dark:hover:bg-gray-600; }
-    </style>
-
     <script>
-        // --- SUPABASE & CONFIG ---
         const PROJECT_URL = 'https://wgsqrjnliglemogtukly.supabase.co';
         const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indnc3Fyam5saWdsZW1vZ3R1a2x5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5ODY2MTIsImV4cCI6MjA3OTU2MjYxMn0.chlJ9Ba2kQDu_xnqMfwcRwv5pgiwHnv7FJJSzKxbPeM';
         const supabase = window.supabase.createClient(PROJECT_URL, ANON_KEY);
 
-        const DEFAULT_TERMS = `1. All estimates are supplied on the assumption of clear access...`;
         const DEFAULT_CONFIG = {
             labour: [ { id: 'l1', label: "Installer + Veh", val: 325, type: 'day' }, { id: 'l2', label: "2 Person Team", val: 550, type: 'day' }, { id: 'l3', label: "Installer On Foot", val: 185, type: 'day' }, { id: 'l4', label: "Supervisor", val: 220, type: 'day' }, { id: 'l5', label: "Custom/Snag", val: 750, type: 'day' } ],
             vehicles: [ { id: 'v1', label: "SWB Van", val: 170, type: 'fixed' }, { id: 'v2', label: "XLWB Van", val: 200, type: 'fixed' }, { id: 'v3', label: "Luton Van", val: 230, type: 'fixed' }, { id: 'v4', label: "7.5T Truck", val: 540, type: 'fixed' }, { id: 'v5', label: "18T Truck", val: 720, type: 'fixed' } ],
             tasks: [ { id: 't1', label: "Standard Uplift", val: 0.3, type: 'hrs' }, { id: 't2', label: "Unwrap/Level", val: 0.2, type: 'hrs' }, { id: 't3', label: "Extended Uplift", val: 0.5, type: 'hrs_check' }, { id: 't4', label: "Stairs (per Item)", val: 0.1, type: 'hrs_check' } ],
             expenses: [ { id: 'e1', label: "Additional Miles", val: 0.90, type: 'fixed' }, { id: 'e2', label: "Waste Disposal", val: 340, type: 'fixed' }, { id: 'e3', label: "ULEZ/City Charge", val: 15, type: 'fixed' }, { id: 'e4', label: "Parking Cost", val: 75, type: 'day' } ],
             globals: [ { id: 'g1', label: "Working Day Hours", val: 7.25 }, { id: 'g2', label: "OOH Multiplier", val: 1.6 }, { id: 'g3', label: "Sat Multiplier", val: 1.75 }, { id: 'g4', label: "Sun Multiplier", val: 2.0 } ],
-            terms: DEFAULT_TERMS,
-            logo: "" 
+            terms: "Standard Terms...", logo: ""
         };
 
         let config = DEFAULT_CONFIG;
-        let currentEstimateId = null;
-        let libraryData = [];
 
-        // --- UTILS ---
-        const fmtMoney = (v) => `£${parseFloat(v).toFixed(2)}`;
-        function showToast(msg) { const x = document.getElementById("toast"); x.innerText = msg; x.className = "show"; setTimeout(() => x.className = x.className.replace("show", ""), 3000); }
-        
-        // --- THEME ---
-        function toggleTheme() {
-            const body = document.body;
-            body.classList.toggle('dark');
-            localStorage.setItem('bh_theme', body.classList.contains('dark') ? 'dark' : 'light');
-        }
-
-        // --- LOGO HANDLER ---
-        function handleLogoUpload(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    config.logo = e.target.result; // Store base64
-                    document.getElementById('admin-logo-preview').innerHTML = `<img src="${config.logo}" class="h-full w-full object-contain">`;
-                };
-                if(input.files[0].size > 500000) { alert("File too large! Please use < 500KB"); return; }
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        // --- INIT ---
         window.onload = async function() {
             lucide.createIcons();
-            if (localStorage.getItem('bh_theme') === 'dark') document.body.classList.add('dark');
-            
+            if(localStorage.getItem('bh_theme') === 'dark') document.body.classList.add('dark');
             await loadSharedConfig();
             addItemRow();
             renderMainSheet();
-            
-            const d = new Date(); 
-            document.getElementById('quoteDate').valueAsDate = d;
-            d.setDate(d.getDate() + 90);
-            document.getElementById('validDate').innerText = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+            document.getElementById('quoteDate').valueAsDate = new Date();
             calc();
         };
 
         async function loadSharedConfig() {
-            try {
-                const { data } = await supabase.from('app_settings').select('*').eq('id', 1).single();
-                if (data && data.config) {
-                    config = data.config;
-                    document.getElementById('db-status').className = "w-2.5 h-2.5 rounded-full bg-green-500";
-                    document.getElementById('db-text').innerText = "Cloud Connected";
-                    // Load Logo if exists
-                    if(config.logo) {
-                        document.getElementById('logo-display').src = config.logo;
-                        document.getElementById('logo-display').classList.remove('hidden');
-                    }
-                }
-            } catch (e) { console.error(e); }
+            const { data } = await supabase.from('app_settings').select('*').eq('id', 1).single();
+            if (data && data.config) { config = data.config; document.getElementById('db-status').className="w-2.5 h-2.5 rounded-full bg-green-500"; document.getElementById('db-text').innerText="Online"; if(config.logo) document.getElementById('admin-logo-preview').src=config.logo; }
         }
 
-        // --- RENDER SHEET ---
+        function calc() {
+            let h=0, m=0;
+            const val = (id) => parseFloat(document.getElementById(id)?.value)||0;
+            document.querySelectorAll('#custom-rows-container tr').forEach(tr=>{ const q=parseFloat(tr.querySelector('.custom-qty').value)||0, r=parseFloat(tr.querySelector('.custom-rate').value)||0; tr.querySelector('.custom-total').innerText=(q*r).toFixed(1); h+=(q*r); });
+            config.tasks.forEach(t=>{ let v=0; if(t.type==='hrs') v=val(`qty_${t.id}`)*t.val; else if(t.type==='hrs_check' && document.getElementById(`chk_${t.id}`)?.checked) v=val('custom-rows-container').childElementCount * t.val; document.getElementById(`tot_${t.id}`).innerText=v.toFixed(1); h+=v; });
+            const dayHrs = config.globals.find(g=>g.label.includes("Hours"))?.val || 7.25;
+            document.getElementById('grandTotalHrs').innerText=h.toFixed(1); document.getElementById('grandTotalDays').innerText=(h/dayHrs).toFixed(2);
+            const manDays = val('manualGlobalDays');
+            [config.labour, config.vehicles, config.expenses].flat().forEach(i=>{ let c=0, q=val(`qty_${i.id}`); if(i.type==='day') { const dInp=document.getElementById(`days_${i.id}`); c = q * (dInp ? (parseFloat(dInp.value)||0) : manDays) * i.val; } else c = q * i.val; if(document.getElementById(`tot_${i.id}`)) document.getElementById(`tot_${i.id}`).innerText = `£${c.toFixed(2)}`; m+=c; });
+            document.getElementById('finalTotal').innerText = `£${m.toFixed(2)}`;
+        }
+
+        function addItemRow() { document.getElementById('custom-rows-container').insertAdjacentHTML('beforeend', `<tr class="text-xs border-b group border-black dark:border-gray-600"><td class="p-0"><textarea class="cell-input left"></textarea></td><td class="p-0"><input type="number" class="custom-qty cell-input" value="1" oninput="calc()"></td><td class="p-0"><input type="number" class="custom-rate cell-input" oninput="calc()"></td><td class="text-center custom-total">0.0</td><td class="border-none text-center"><button onclick="this.closest('tr').remove();calc()" class="text-red-500 opacity-0 group-hover:opacity-100">x</button></td></tr>`); }
+        
         function renderMainSheet() {
-            // Tasks
-            const tContainer = document.getElementById('fixed-tasks-container'); tContainer.innerHTML = '';
-            config.tasks.forEach(t => {
-                const rowHtml = t.type === 'hrs' 
-                    ? `<tr><td class="bg-gray-50 dark:bg-gray-800 border-color-inherit">${t.label}</td><td class="p-0"><input type="number" id="qty_${t.id}" class="cell-input" oninput="calc()"></td><td class="text-center text-gray-500">${t.val}</td><td class="text-center font-bold" id="tot_${t.id}">0.0</td></tr>`
-                    : `<tr class="bg-yellow-50 dark:bg-amber-950/40 border-color-inherit print-bg-yellow"><td colspan="3" class="font-bold flex items-center gap-2"><input type="checkbox" id="chk_${t.id}" onchange="calc()" class="w-4 h-4 accent-blue-600">${t.label} (+${t.val} hr/item)</td><td class="text-center font-bold" id="tot_${t.id}">0.0</td></tr>`;
-                tContainer.innerHTML += rowHtml;
-            });
-
-            // Labour
-            const lContainer = document.getElementById('labour-rows'); lContainer.innerHTML = '';
-            config.labour.forEach(l => lContainer.innerHTML += `<tr><td class="bg-gray-50 dark:bg-gray-800 pl-2 border-color-inherit">${l.label}</td><td class="p-0"><input type="number" id="qty_${l.id}" class="cell-input" oninput="calc()"></td><td class="text-center">£${l.val}</td><td class="p-0"><input type="number" id="days_${l.id}" class="cell-input" oninput="calc()"></td><td class="text-right pr-2 font-bold" id="tot_${l.id}">£0.00</td></tr>`);
-
-            // Expenses & Globals
-            const eContainer = document.getElementById('expenses-rows'); eContainer.innerHTML = '';
-            const gContainer = document.getElementById('globals-rows'); gContainer.innerHTML = '';
-
-            config.expenses.forEach(e => {
-                if (e.label.includes("Parking") || e.label.includes("ULEZ") || e.label.includes("City")) {
-                     gContainer.innerHTML += `<div class="grid grid-cols-[2fr_1fr_1fr] border-b border-black dark:border-gray-500 items-center h-8 ${e.label.includes('Parking') ? 'bg-gray-50 dark:bg-gray-800' : ''}"><div class="px-2 font-bold flex items-center h-full">${e.label}</div><div class="p-0 h-full border-l border-black dark:border-gray-500"><input type="number" id="qty_${e.id}" value="1" class="cell-input" oninput="calc()"></div><div class="px-2 text-right h-full flex items-center justify-end border-l border-black dark:border-gray-500" id="tot_${e.id}">£0.00</div></div>`;
-                } else {
-                    eContainer.innerHTML += `<tr><td class="font-bold pl-2 border-color-inherit">${e.label}</td><td class="p-0"><input type="number" id="qty_${e.id}" class="cell-input" oninput="calc()"></td><td class="text-center">£${e.val}</td><td class="text-right pr-2" id="tot_${e.id}">£0.00</td></tr>`;
-                }
-            });
-
-            // Vehicles
-            const vContainer = document.getElementById('veh-rows'); vContainer.innerHTML = '';
-            config.vehicles.forEach((v, i) => {
-                const isFirst = i===0 ? 'oninput="syncVehicleAreas(this.value)"' : 'class="cell-input veh-area-slave"';
-                vContainer.innerHTML += `<tr><td class="bg-gray-50 dark:bg-gray-800 pl-2 text-center border-color-inherit">${v.label}</td><td class="text-center">£${v.val}</td><td class="p-0"><input type="number" id="qty_${v.id}" class="cell-input" oninput="calc()"></td><td class="p-0 border-l border-black dark:border-gray-500"><input type="text" class="cell-input text-gray-500" value="London" ${isFirst}></td><td class="text-right pr-2 font-bold" id="tot_${v.id}">£0.00</td></tr>`;
-            });
-
-            document.getElementById('terms-display').innerText = config.terms;
-            document.getElementById('lbl_dayHrs').innerText = config.globals.find(g=>g.id==='g1').val;
-            document.getElementById('lbl_ooh').innerText = config.globals.find(g=>g.id==='g2').val;
-            document.getElementById('lbl_sat').innerText = config.globals.find(g=>g.id==='g3').val;
-            document.getElementById('lbl_sun').innerText = config.globals.find(g=>g.id==='g4').val;
-            
-            // Show Logo if loaded
-            if(config.logo) {
-                document.getElementById('logo-display').src = config.logo;
-                document.getElementById('logo-display').classList.remove('hidden');
-            }
+            const tC=document.getElementById('fixed-tasks-container'); tC.innerHTML=''; config.tasks.forEach(t=>{ tC.innerHTML+=t.type==='hrs'?`<tr><td class="bg-gray-50 dark:bg-gray-800 border-color-inherit">${t.label}</td><td class="p-0"><input type="number" id="qty_${t.id}" class="cell-input" oninput="calc()"></td><td class="text-center text-gray-500">${t.val}</td><td class="text-center font-bold" id="tot_${t.id}">0.0</td></tr>`:`<tr class="bg-yellow-50 dark:bg-amber-950/40 border-color-inherit print-bg-yellow"><td colspan="3" class="font-bold flex items-center gap-2"><input type="checkbox" id="chk_${t.id}" onchange="calc()" class="w-4 h-4 accent-blue-600">${t.label} (+${t.val} hr/item)</td><td class="text-center font-bold" id="tot_${t.id}">0.0</td></tr>`; });
+            const lC=document.getElementById('labour-rows'); lC.innerHTML=''; config.labour.forEach(l=>lC.innerHTML+=`<tr><td class="bg-gray-50 dark:bg-gray-800 pl-2 border-color-inherit">${l.label}</td><td class="p-0"><input type="number" id="qty_${l.id}" class="cell-input" oninput="calc()"></td><td class="text-center">£${l.val}</td><td class="p-0"><input type="number" id="days_${l.id}" class="cell-input" oninput="calc()"></td><td class="text-right pr-2 font-bold" id="tot_${l.id}">£0.00</td></tr>`);
+            const eC=document.getElementById('expenses-rows'); eC.innerHTML=''; const gC=document.getElementById('globals-rows'); gC.innerHTML='';
+            config.expenses.forEach(e=>{ if(e.label.includes("Parking")||e.label.includes("ULEZ")||e.label.includes("City")) gC.innerHTML+=`<div class="grid grid-cols-[2fr_1fr_1fr] border-b border-black dark:border-gray-500 items-center h-8 ${e.label.includes('Parking')?'bg-gray-50 dark:bg-gray-800':''}"><div class="px-2 font-bold flex items-center h-full">${e.label}</div><div class="p-0 h-full border-l border-black dark:border-gray-500"><input type="number" id="qty_${e.id}" value="1" class="cell-input" oninput="calc()"></div><div class="px-2 text-right h-full flex items-center justify-end border-l border-black dark:border-gray-500" id="tot_${e.id}">£0.00</div></div>`; else eC.innerHTML+=`<tr><td class="font-bold pl-2 border-color-inherit">${e.label}</td><td class="p-0"><input type="number" id="qty_${e.id}" class="cell-input" oninput="calc()"></td><td class="text-center">£${e.val}</td><td class="text-right pr-2" id="tot_${e.id}">£0.00</td></tr>`; });
+            const vC=document.getElementById('veh-rows'); vC.innerHTML=''; config.vehicles.forEach((v,i)=>{ const first=i===0?'oninput="syncVehicleAreas(this.value)"':'class="cell-input veh-area-slave"'; vC.innerHTML+=`<tr><td class="bg-gray-50 dark:bg-gray-800 pl-2 text-center border-color-inherit">${v.label}</td><td class="text-center">£${v.val}</td><td class="p-0"><input type="number" id="qty_${v.id}" class="cell-input" oninput="calc()"></td><td class="p-0 border-l border-black dark:border-gray-500"><input type="text" class="cell-input text-gray-500" value="London" ${first}></td><td class="text-right pr-2 font-bold" id="tot_${v.id}">£0.00</td></tr>`; });
+            document.getElementById('validDate').innerText = new Date(Date.now() + 90*24*60*60*1000).toLocaleDateString();
+            if(config.logo) document.getElementById('logo-display').src = config.logo;
         }
-
         function syncVehicleAreas(val) { document.querySelectorAll('.veh-area-slave').forEach(input => input.value = val); }
 
-        // --- CALCULATION ---
-        function calc() {
-            const val = (id) => parseFloat(document.getElementById(id)?.value) || 0;
-            const setTxt = (id, v) => { if(document.getElementById(id)) document.getElementById(id).innerText = v; };
-
-            let totalCustomQty = 0;
-            let totalHrs = 0;
-
-            document.querySelectorAll('#custom-rows-container tr').forEach(tr => {
-                const qty = parseFloat(tr.querySelector('.custom-qty').value)||0;
-                totalCustomQty += qty;
-                const rate = parseFloat(tr.querySelector('.custom-rate').value)||0;
-                const line = qty * rate;
-                tr.querySelector('.custom-total').innerText = line ? line.toFixed(1) : "";
-                totalHrs += line;
-            });
-
-            config.tasks.forEach(t => {
-                let lineHrs = 0;
-                if(t.type === 'hrs') lineHrs = val(`qty_${t.id}`) * t.val;
-                else if (t.type === 'hrs_check') if(document.getElementById(`chk_${t.id}`)?.checked) lineHrs = totalCustomQty * t.val;
-                setTxt(`tot_${t.id}`, lineHrs.toFixed(1));
-                totalHrs += lineHrs;
-            });
-
-            const dayHrs = config.globals.find(g=>g.id==='g1').val;
-            setTxt('grandTotalHrs', totalHrs.toFixed(1));
-            setTxt('grandTotalDays', (totalHrs / dayHrs).toFixed(2));
-
-            let totalMoney = 0;
-            const globalDays = parseFloat(document.getElementById('manualGlobalDays').value) || 1;
-
-            const processMoneyItem = (item) => {
-                let lineCost = 0;
-                const qty = val(`qty_${item.id}`);
-                if(item.type === 'day') {
-                    const rowDaysInput = document.getElementById(`days_${item.id}`);
-                    const days = rowDaysInput ? (parseFloat(rowDaysInput.value)||0) : globalDays; 
-                    lineCost = qty * days * item.val;
-                } else {
-                    lineCost = qty * item.val;
-                }
-                setTxt(`tot_${item.id}`, fmtMoney(lineCost));
-                totalMoney += lineCost;
-            };
-
-            config.labour.forEach(processMoneyItem);
-            config.vehicles.forEach(processMoneyItem);
-            config.expenses.forEach(processMoneyItem);
-
-            const oohMult = config.globals.find(g=>g.id==='g2').val;
-            const satMult = config.globals.find(g=>g.id==='g3').val;
-            const sunMult = config.globals.find(g=>g.id==='g4').val;
-            
-            setTxt('finalTotal', fmtMoney(totalMoney));
-            setTxt('oohTotal', fmtMoney(totalMoney * oohMult));
-            setTxt('satTotal', fmtMoney(totalMoney * satMult));
-            setTxt('sunTotal', fmtMoney(totalMoney * sunMult));
-        }
-
-        function addItemRow() {
-            document.getElementById('custom-rows-container').insertAdjacentHTML('beforeend', `
-            <tr class="text-xs border-b border-black dark:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 group">
-                <td class="p-0 border-color-inherit"><textarea class="cell-input left" oninput="autoResize(this)"></textarea></td>
-                <td class="p-0 border-color-inherit"><input type="number" class="custom-qty cell-input" value="1" oninput="calc()"></td>
-                <td class="p-0 border-color-inherit"><input type="number" class="custom-rate cell-input" oninput="calc()"></td>
-                <td class="text-center custom-total border-color-inherit">0.0</td>
-                <td class="text-center border-none"><button class="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity" onclick="this.closest('tr').remove(); calc();"><i data-lucide="x" class="w-3 h-3"></i></button></td>
-            </tr>`);
-        }
-
-        function autoResize(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
-
-        // --- ADMIN, SAVE, LIBRARY ---
-        function toggleAdmin() { 
-            const el = document.getElementById('admin-view'); 
-            if(el.classList.contains('hidden')) { renderAdminPanel(); el.classList.remove('hidden'); } else el.classList.add('hidden'); 
-        }
-
-        function renderAdminPanel() {
-            const renderSection = (containerId, arrName) => {
-                const c = document.getElementById(containerId); c.innerHTML = '';
-                config[arrName].forEach((item, index) => {
-                    if(arrName === 'globals') {
-                        c.innerHTML += `<div class="admin-row"><span class="text-sm text-gray-300 col-span-2">${item.label}</span><input type="number" class="admin-input-num" value="${item.val}" onchange="updateConfigVal('${arrName}', ${index}, 'val', this.value)"><span></span></div>`;
-                        return;
-                    }
-                    c.innerHTML += `<div class="admin-row"><input type="text" class="admin-input-text" value="${item.label}" onchange="updateConfigVal('${arrName}', ${index}, 'label', this.value)"><input type="number" class="admin-input-num" value="${item.val}" onchange="updateConfigVal('${arrName}', ${index}, 'val', this.value)"><select class="admin-select" onchange="updateConfigVal('${arrName}', ${index}, 'type', this.value)"><option value="day" ${item.type==='day'?'selected':''}>£/Day</option><option value="fixed" ${item.type==='fixed'?'selected':''}>£ Fixed</option><option value="hrs" ${item.type==='hrs'?'selected':''}>Hrs</option><option value="hrs_check" ${item.type==='hrs_check'?'selected':''}>Hrs(Chk)</option></select><div class="admin-btn-del" onclick="removeAdmRow('${arrName}', ${index})">✕</div></div>`;
-                });
-            };
-            renderSection('adm-labour-list', 'labour'); renderSection('adm-tasks-list', 'tasks'); renderSection('adm-vehicles-list', 'vehicles'); renderSection('adm-expenses-list', 'expenses'); renderSection('adm-globals-list', 'globals');
-            document.getElementById('adm-terms-input').value = config.terms;
-            
-            // Show logo in Admin
-            if(config.logo) document.getElementById('admin-logo-preview').innerHTML = `<img src="${config.logo}" class="h-full w-full object-contain">`;
-            lucide.createIcons();
-        }
-
-        function updateConfigVal(arr, idx, field, val) { if(field === 'val') val = parseFloat(val); config[arr][idx][field] = val; }
-        function addNewRow(arr) { const id = Date.now().toString().slice(-4); let type = arr === 'labour' ? 'day' : (arr === 'tasks' ? 'hrs' : 'fixed'); config[arr].push({ id: id, label: "New Item", val: 0, type: type }); renderAdminPanel(); }
-        function removeAdmRow(arr, idx) { config[arr].splice(idx, 1); renderAdminPanel(); }
+        function toggleAdmin(){ const el=document.getElementById('admin-view'); if(el.classList.contains('hidden')) { renderAdminPanel(); el.classList.remove('hidden'); } else el.classList.add('hidden'); }
+        function renderAdminPanel(){ const render=(id, arr)=>{ const c=document.getElementById(id); c.innerHTML=''; config[arr].forEach((i,x)=>{ c.innerHTML+=`<div class="grid grid-cols-[1fr_80px_30px] gap-2 mb-2"><input class="border px-1 text-gray-800" value="${i.label}" onchange="config.${arr}[${x}].label=this.value"><input class="border px-1 text-right text-gray-800" value="${i.val}" type="number" onchange="config.${arr}[${x}].val=parseFloat(this.value)"><button class="text-red-500" onclick="config.${arr}.splice(${x},1);renderAdminPanel()">x</button></div>`; }); }; render('adm-labour-list','labour'); render('adm-tasks-list','tasks'); render('adm-vehicles-list','vehicles'); render('adm-expenses-list','expenses'); render('adm-globals-list','globals'); document.getElementById('adm-terms-input').value=config.terms; if(config.logo) document.getElementById('admin-logo-preview').src=config.logo; }
+        function handleLogoUpload(input){ if(input.files&&input.files[0]){ const r=new FileReader(); r.onload=function(e){ config.logo=e.target.result; document.getElementById('admin-logo-preview').src=config.logo; }; r.readAsDataURL(input.files[0]); } }
+        async function saveAdmin(){ config.terms=document.getElementById('adm-terms-input').value; await supabase.from('app_settings').upsert({id:1, config:config}); toggleAdmin(); renderMainSheet(); calc(); }
         
-        async function saveAdmin() { 
-            config.terms = document.getElementById('adm-terms-input').value; 
-            await supabase.from('app_settings').upsert({ id: 1, config: config }); 
-            toggleAdmin(); renderMainSheet(); calc(); showToast("Admin Saved"); 
-        }
-        
-        function newEstimate() { 
-            if(!confirm("Clear estimate?")) return; currentEstimateId = null; 
-            document.getElementById('quoteRef').value=''; document.getElementById('projName').value=''; document.getElementById('clientName').value='';
-            document.getElementById('colAddr').value=''; document.getElementById('siteAddr').value=''; 
-            document.getElementById('siteNotes').value='Installation of products as detailed in the supplied Works Order, delivered in accordance with site requirements and the agreed access conditions.'; 
-            document.getElementById('specificNotes').value=''; document.getElementById('manualGlobalDays').value='1'; 
-            document.getElementById('custom-rows-container').innerHTML=''; addItemRow(); 
-            document.querySelectorAll('input[type="number"]').forEach(i=>i.value=(i.id==='manualGlobalDays'?1:'')); 
-            document.querySelectorAll('input[type="checkbox"]').forEach(c=>c.checked=false); calc(); showToast("New Estimate"); 
-        }
-
-        // GPT PASTE
-        function openPasteFromGPT() { document.getElementById('paste-modal').classList.remove('hidden'); }
-        function closePasteFromGPT() { document.getElementById('paste-modal').classList.add('hidden'); }
-        function applyPasteFromGPT(append) { 
-            const rows = document.getElementById('paste-input').value.trim().split(/\r?\n+/).filter(l=>l.trim()!=='').map(l=>{
-                const p = l.split(/\t+|\s*\|\s*/); return {desc:p[0]||'', qty:parseFloat(p[1])||0, hrs:parseFloat(p[2])||0};
-            });
-            if(!rows.length){alert('Empty');return;}
-            if(!append) document.getElementById('custom-rows-container').innerHTML='';
-            const c = document.getElementById('custom-rows-container');
-            rows.forEach(r=>{
-                const tr=document.createElement('tr'); tr.className='text-xs border-b border-black dark:border-gray-500 group';
-                tr.innerHTML=`<td class="p-0"><textarea class="cell-input left" oninput="autoResize(this)">${r.desc}</textarea></td><td class="p-0"><input type="number" class="custom-qty cell-input" value="${r.qty}" oninput="calc()"></td><td class="p-0"><input type="number" class="custom-rate cell-input" value="${r.hrs}" oninput="calc()"></td><td class="text-center custom-total">0.0</td><td class="text-center border-none"><button class="text-red-400 opacity-0 group-hover:opacity-100" onclick="this.closest('tr').remove();calc()"><i data-lucide="x" class="w-3 h-3"></i></button></td>`;
-                c.appendChild(tr);
-            });
-            closePasteFromGPT(); calc(); lucide.createIcons();
-        }
-
-        // LIBRARY
-        async function openLibrary() { document.getElementById('library-view').classList.remove('hidden'); const { data } = await supabase.from('estimates').select('*').order('created_at',{ascending:false}).limit(50); libraryData=data||[]; renderLibrary(libraryData); }
-        function renderLibrary(data) { 
-            const l=document.getElementById('lib-list'); l.innerHTML=''; 
-            data.forEach(est=>{ 
-                const tr=document.createElement('tr'); tr.className='hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer';
-                tr.innerHTML=`<td class="p-3">${new Date(est.created_at).toLocaleDateString()}</td><td class="p-3 font-bold">${est.ref_code}</td><td class="p-3">${est.project_name}</td><td class="p-3 text-right">${est.data.total||'£0.00'}</td><td class="p-3 flex gap-2 justify-center"><button class="text-blue-500 hover:text-blue-700" onclick="loadEstimate(${est.id})"><i data-lucide="folder-open" class="w-4 h-4"></i></button><button class="text-red-500 hover:text-red-700" onclick="deleteEstimate(${est.id})"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>`;
-                l.appendChild(tr); 
-            });
-            lucide.createIcons();
-        }
-        async function deleteEstimate(id) { if(!confirm("Delete?"))return; await supabase.from('estimates').delete().eq('id',id); openLibrary(); }
-        function filterLibrary() { const t=document.getElementById('lib-search').value.toLowerCase(); renderLibrary(libraryData.filter(e=>e.ref_code.toLowerCase().includes(t)||e.project_name.toLowerCase().includes(t))); }
-        function loadEstimate(id) { const d=libraryData.find(e=>e.id===id).data; currentEstimateId=id; document.getElementById('quoteRef').value=d.ref; document.getElementById('projName').value=d.proj; if(d.client) document.getElementById('clientName').value=d.client; document.getElementById('quoteDate').value=d.date; document.getElementById('colAddr').value=d.addresses.col; document.getElementById('siteAddr').value=d.addresses.site; document.getElementById('siteNotes').value=d.addresses.siteNotes; document.getElementById('specificNotes').value=d.addresses.notes; for(const[k,v] of Object.entries(d.inputs)){ const el=document.getElementById(k); if(el) { if(el.type==='checkbox') el.checked=v; else el.value=v; } } document.getElementById('custom-rows-container').innerHTML=''; d.rows.forEach(r=>{ const tr=document.createElement('tr'); tr.className='text-xs border-b border-black dark:border-gray-500 group'; tr.innerHTML=`<td class="p-0"><textarea class="cell-input left">${r.desc}</textarea></td><td class="p-0"><input type="number" class="custom-qty cell-input" value="${r.qty}" oninput="calc()"></td><td class="p-0"><input type="number" class="custom-rate cell-input" value="${r.rate}" oninput="calc()"></td><td class="text-center custom-total">0.0</td><td class="text-center border-none"><button class="text-red-400 opacity-0 group-hover:opacity-100" onclick="this.closest('tr').remove();calc()"><i data-lucide="x" class="w-3 h-3"></i></button></td>`; document.getElementById('custom-rows-container').appendChild(tr); }); document.getElementById('library-view').classList.add('hidden'); calc(); lucide.createIcons(); showToast("Loaded"); }
-
-        async function saveEstimate(mode) { 
-            const refInput=document.getElementById('quoteRef'); let ref=refInput.value||"Draft"; const proj=document.getElementById('projName').value||"Untitled"; const total=document.getElementById('finalTotal').innerText;
-            if(mode==='revision'){ const m=ref.match(/-REV(\d+)$/); ref=m?ref.replace(/-REV\d+$/, `-REV${parseInt(m[1])+1}`) : `${ref}-REV1`; refInput.value=ref; document.getElementById('quoteDate').valueAsDate=new Date(); currentEstimateId=null; }
-            const data={ ref, proj, client:document.getElementById('clientName').value, date:document.getElementById('quoteDate').value, total, rows:Array.from(document.querySelectorAll('#custom-rows-container tr')).map(tr=>({desc:tr.querySelector('textarea').value, qty:tr.querySelector('.custom-qty').value, rate:tr.querySelector('.custom-rate').value})), inputs:{}, addresses:{ col:document.getElementById('colAddr').value, site:document.getElementById('siteAddr').value, notes:document.getElementById('specificNotes').value, siteNotes:document.getElementById('siteNotes').value } };
-            document.querySelectorAll('input[type="number"], input[type="text"], input[type="checkbox"]').forEach(el=>{ if(el.id) data.inputs[el.id] = el.type==='checkbox' ? el.checked : el.value; });
-            if(mode==='update' && currentEstimateId) await supabase.from('estimates').update({ ref_code:ref, project_name:proj, data }).eq('id',currentEstimateId);
-            else { const {data:res}=await supabase.from('estimates').insert({ ref_code:ref, project_name:proj, data }).select(); if(res) currentEstimateId=res[0].id; }
-            showToast(mode==='revision'?`Created ${ref}`:"Saved");
-        }
-
         function generatePDF() {
-            saveEstimate('update');
-            const wasDark = document.body.classList.contains('dark'); if(wasDark) document.body.classList.remove('dark');
-            const el = document.getElementById('ui-container'); const page2 = document.getElementById('page-2');
-            page2.classList.remove('hidden-on-screen'); page2.classList.add('pdf-page-break');
-            const btns = document.querySelectorAll('.no-print'); btns.forEach(b => b.style.display = 'none');
-            const ref = document.getElementById('quoteRef').value || "Est"; const proj = document.getElementById('projName').value.replace(/[^a-z0-9]/gi, '-') || "Proj"; const date = document.getElementById('quoteDate').value;
-            html2pdf().set({ margin: 0.2, filename: `${ref}_${proj}_${date}.pdf`, image: { type: 'jpeg', quality: 1 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' } }).from(el).save().then(() => {
-                 btns.forEach(b => b.style.display = ''); page2.classList.add('hidden-on-screen'); page2.classList.remove('pdf-page-break'); if(wasDark) document.body.classList.add('dark');
-            });
+            document.getElementById('pdf-ref').innerText = document.getElementById('quoteRef').value;
+            document.getElementById('pdf-date').innerText = document.getElementById('quoteDate').value;
+            document.getElementById('pdf-valid').innerText = document.getElementById('validDate').innerText;
+            document.getElementById('pdf-client').innerText = document.getElementById('clientName').value;
+            document.getElementById('pdf-project').innerText = document.getElementById('projName').value;
+            document.getElementById('pdf-site-addr').innerText = document.getElementById('siteAddr').value;
+            document.getElementById('pdf-scope').innerText = document.getElementById('siteNotes').value;
+            if(config.logo) { document.getElementById('pdf-logo').src = config.logo; document.getElementById('pdf-logo').classList.remove('hidden'); }
+            
+            const tbody = document.getElementById('pdf-item-rows'); tbody.innerHTML = '';
+            document.querySelectorAll('#custom-rows-container tr').forEach(tr => { const d=tr.querySelector('textarea').value; if(d) tbody.innerHTML += `<tr><td class="px-4 py-2">${d}</td><td class="text-center">${tr.querySelector('.custom-qty').value}</td><td class="text-center">${tr.querySelector('.custom-rate').value}</td><td class="text-right">${tr.querySelector('.custom-total').innerText}</td></tr>`; });
+            document.getElementById('pdf-total-hrs').innerText = document.getElementById('grandTotalHrs').innerText;
+            
+            const chList = document.getElementById('pdf-charges-list'); chList.innerHTML = '';
+            config.labour.forEach(l=>{ const v=parseFloat(document.getElementById(`tot_${l.id}`).innerText.replace('£',''))||0; if(v>0) chList.innerHTML+=`<li class="flex justify-between"><span>${l.label}</span><span>£${v.toFixed(2)}</span></li>`; });
+            config.vehicles.concat(config.expenses).forEach(i=>{ const v=parseFloat(document.getElementById(`tot_${i.id}`).innerText.replace('£',''))||0; if(v>0) chList.innerHTML+=`<li class="flex justify-between"><span class="text-gray-500">${i.label}:</span> <span>£${v.toFixed(2)}</span></li>`; });
+            
+            document.getElementById('pdf-final-total').innerText = document.getElementById('finalTotal').innerText;
+            document.getElementById('pdf-labour-days').innerText = document.getElementById('grandTotalDays').innerText;
+            document.getElementById('pdf-terms').innerText = config.terms;
+
+            const element = document.getElementById('pdf-template'); element.style.display = 'block';
+            html2pdf().set({ margin: 0, filename: `${document.getElementById('quoteRef').value}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } }).from(element).save().then(() => { element.style.display = 'none'; });
         }
+        
+        function toggleTheme(){ const b=document.body; b.classList.toggle('dark'); localStorage.setItem('bh_theme', b.classList.contains('dark')?'dark':'light'); }
+        function newEstimate(){ if(confirm("Clear?")) location.reload(); }
+        function showToast(m){ const t=document.getElementById('toast'); t.innerText=m; t.className="show"; setTimeout(()=>t.className=t.className.replace("show",""),3000); }
     </script>
 </body>
 </html>
