@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BH Installation Estimate Tool v18</title>
+    <title>BH Installation Estimate Tool v20</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -50,7 +50,7 @@
         /* LIBRARY TABLE */
         .lib-table th { background-color: #f3f4f6; text-align: left; padding: 8px; border-bottom: 2px solid #ddd; border-right: none; }
         .lib-table td { border-bottom: 1px solid #eee; padding: 8px; border-right: none; }
-        .lib-row:hover { background-color: #f9fafb; cursor: pointer; }
+        .lib-row:hover { background-color: #f9fafb; }
 
         /* TOAST */
         #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 4px; padding: 16px; position: fixed; z-index: 100; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 14px; }
@@ -77,7 +77,7 @@
     <div class="max-w-[1300px] mx-auto flex justify-between items-center mb-4 no-print bg-white p-3 rounded shadow">
         <div class="flex items-center gap-4">
             <div>
-                <h1 class="text-xl font-bold text-gray-800">BH Estimate Tool v18</h1>
+                <h1 class="text-xl font-bold text-gray-800">BH Estimate Tool v20</h1>
                 <p class="text-xs text-gray-500 flex items-center gap-2">
                     <span id="db-status" class="w-2 h-2 rounded-full bg-red-500"></span>
                     <span id="db-text">Connecting...</span>
@@ -86,11 +86,12 @@
             </div>
         </div>
         <div class="space-x-2 flex items-center">
-            <button onclick="openLibrary()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-1.5 rounded text-sm font-bold shadow flex items-center gap-2">📚 Estimate Library</button>
-            <div class="h-6 w-px bg-gray-300 mx-2"></div>
+            <button onclick="newEstimate()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 border border-gray-400 px-4 py-1.5 rounded text-sm font-bold shadow flex items-center gap-2">📄 New Estimate</button>
+            <div class="h-6 w-px bg-gray-300 mx-1"></div>
+            <button onclick="openLibrary()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-1.5 rounded text-sm font-bold shadow flex items-center gap-2">📚 Library</button>
             <button onclick="saveEstimate('update')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm font-bold shadow flex items-center gap-2">💾 Save</button>
-            <button onclick="saveEstimate('revision')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded text-sm font-bold shadow flex items-center gap-2">📋 Save as Revision</button>
-            <div class="h-6 w-px bg-gray-300 mx-2"></div>
+            <button onclick="saveEstimate('revision')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded text-sm font-bold shadow flex items-center gap-2">📋 Rev+</button>
+            <div class="h-6 w-px bg-gray-300 mx-1"></div>
             <button onclick="toggleAdmin()" class="bg-gray-800 hover:bg-black text-white px-4 py-1.5 rounded text-sm font-bold shadow">⚙️ Admin</button>
             <button onclick="generatePDF()" class="bg-gray-700 hover:bg-gray-900 text-white px-4 py-1.5 rounded text-sm font-bold shadow">Download PDF</button>
         </div>
@@ -139,8 +140,14 @@
                         <div class="p-2 border-r border-black text-right text-xs bg-gray-200 flex items-center justify-end">Labour in Days (<span id="lbl_dayHrs">7.25</span>hr)</div>
                         <div class="p-2 text-center font-bold text-lg flex items-center justify-center" id="grandTotalDays">0.00</div>
                     </div>
-                    <div class="flex-grow flex flex-col min-h-[150px] bg-row-blue">
-                        <div class="p-2 font-bold text-center border-b border-black text-sm">Days Required on site / Notes</div>
+                    
+                    <div class="bg-row-blue border-b-2 border-black p-2 flex items-center justify-between">
+                        <span class="font-bold text-sm">Manual Days on Site:</span>
+                        <input type="number" id="manualGlobalDays" value="1" class="w-20 p-1 text-center border border-black font-bold bg-white" oninput="calc()">
+                    </div>
+                    
+                    <div class="flex-grow flex flex-col min-h-[100px] bg-row-blue">
+                        <div class="p-1 text-xs font-bold text-gray-600 border-b border-gray-400 ml-2">Site Notes</div>
                         <textarea id="siteNotes" class="w-full flex-grow bg-transparent p-2 resize-none text-sm placeholder-gray-500" placeholder="Enter notes here..."></textarea>
                     </div>
                 </div>
@@ -203,7 +210,7 @@
     <div id="toast">Saved!</div>
 
     <div id="library-view" class="hidden fixed inset-0 bg-black bg-opacity-75 overflow-y-auto p-4 z-50 flex items-center justify-center">
-        <div class="bg-white rounded-lg shadow-xl p-6 w-[900px] max-h-[85vh] flex flex-col">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-[1000px] max-h-[85vh] flex flex-col">
             <div class="flex justify-between items-center mb-4 border-b pb-2">
                 <h3 class="text-2xl font-bold">Estimate Library</h3>
                 <button onclick="document.getElementById('library-view').classList.add('hidden')" class="text-gray-500 hover:text-black text-xl font-bold">✕</button>
@@ -215,15 +222,14 @@
                 <table class="w-full lib-table">
                     <thead>
                         <tr>
-                            <th>Date</th>
-                            <th>Ref Code</th>
+                            <th style="width: 100px;">Date</th>
+                            <th style="width: 150px;">Ref Code</th>
                             <th>Project</th>
-                            <th>Total (£)</th>
-                            <th>Action</th>
+                            <th style="width: 100px;">Total</th>
+                            <th style="width: 160px;">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="lib-list">
-                        </tbody>
+                    <tbody id="lib-list"></tbody>
                 </table>
             </div>
         </div>
@@ -274,8 +280,8 @@
         };
 
         let config = DEFAULT_CONFIG;
-        let currentEstimateId = null; // Tracks loaded estimate ID for updating
-        let libraryData = []; // For search filtering
+        let currentEstimateId = null;
+        let libraryData = [];
 
         window.onload = async function() {
             await loadSharedConfig();
@@ -301,38 +307,49 @@
 
         function showToast(msg) {
             const x = document.getElementById("toast");
-            x.innerText = msg;
-            x.className = "show";
+            x.innerText = msg; x.className = "show";
             setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
         }
 
-        // --- SAVE LOGIC ---
+        // --- NEW ESTIMATE ---
+        function newEstimate() {
+            if(!confirm("Are you sure you want to clear the current estimate? Unsaved changes will be lost.")) return;
+            
+            currentEstimateId = null;
+            document.getElementById('quoteRef').value = '';
+            document.getElementById('projName').value = '';
+            document.getElementById('colAddr').value = "RSF Ropley\nSO24 0EF"; // Default
+            document.getElementById('siteAddr').value = '';
+            document.getElementById('siteNotes').value = '';
+            document.getElementById('specificNotes').value = '';
+            document.getElementById('manualGlobalDays').value = '1';
+            
+            // Reset Items
+            document.getElementById('custom-rows-container').innerHTML = '';
+            addItemRow();
+            
+            // Reset all numerical inputs to default/0
+            document.querySelectorAll('input[type="number"]').forEach(i => i.value = (i.id === 'manualGlobalDays' ? 1 : ''));
+            document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
+            
+            calc();
+            showToast("New Estimate Created");
+        }
+
         async function saveEstimate(mode) {
-            // Gather Data
             const refInput = document.getElementById('quoteRef');
             let ref = refInput.value || "Draft";
             const proj = document.getElementById('projName').value || "Untitled";
-            const dateVal = document.getElementById('quoteDate').value;
             const totalVal = document.getElementById('finalTotal').innerText;
 
-            // Revision Logic
             if (mode === 'revision') {
-                // Regex to find -REV(number)
                 const revMatch = ref.match(/-REV(\d+)$/);
-                if (revMatch) {
-                    let nextRev = parseInt(revMatch[1]) + 1;
-                    ref = ref.replace(/-REV\d+$/, `-REV${nextRev}`);
-                } else {
-                    ref = `${ref}-REV1`;
-                }
-                // Update Input and Date
+                ref = revMatch ? ref.replace(/-REV\d+$/, `-REV${parseInt(revMatch[1]) + 1}`) : `${ref}-REV1`;
                 refInput.value = ref;
-                document.getElementById('quoteDate').valueAsDate = new Date(); // Update date to today
-                
-                currentEstimateId = null; // Clear ID so we insert new row
+                document.getElementById('quoteDate').valueAsDate = new Date();
+                currentEstimateId = null;
             }
 
-            // Construct Payload
             const estimateData = {
                 ref, proj,
                 date: document.getElementById('quoteDate').value,
@@ -355,46 +372,26 @@
                 if(el.id) estimateData.inputs[el.id] = el.type === 'checkbox' ? el.checked : el.value;
             });
 
-            // DB Interaction
             let error;
             if (mode === 'update' && currentEstimateId) {
-                // Update existing row
-                const { error: err } = await supabase.from('estimates').update({
-                    ref_code: ref,
-                    project_name: proj,
-                    data: estimateData
-                }).eq('id', currentEstimateId);
+                const { error: err } = await supabase.from('estimates').update({ ref_code: ref, project_name: proj, data: estimateData }).eq('id', currentEstimateId);
                 error = err;
             } else {
-                // Insert new row (New Save or Revision)
-                const { data, error: err } = await supabase.from('estimates').insert({
-                    ref_code: ref,
-                    project_name: proj,
-                    data: estimateData
-                }).select();
+                const { data, error: err } = await supabase.from('estimates').insert({ ref_code: ref, project_name: proj, data: estimateData }).select();
                 if(data) currentEstimateId = data[0].id;
                 error = err;
             }
 
-            if(!error) {
-                showToast(mode === 'revision' ? `Created ${ref}!` : "Saved Successfully!");
-            } else {
-                alert("Error saving: " + error.message);
-            }
+            if(!error) showToast(mode === 'revision' ? `Created ${ref}!` : "Saved Successfully!");
+            else alert("Error: " + error.message);
         }
 
-        // --- LIBRARY & SEARCH ---
         async function openLibrary() {
             document.getElementById('library-view').classList.remove('hidden');
             const list = document.getElementById('lib-list');
             list.innerHTML = '<tr><td colspan="5" class="text-center p-4">Loading...</td></tr>';
-            
             const { data, error } = await supabase.from('estimates').select('*').order('created_at', { ascending: false }).limit(50);
-            
-            if(data) {
-                libraryData = data;
-                renderLibrary(data);
-            }
+            if(data) { libraryData = data; renderLibrary(data); }
         }
 
         function renderLibrary(data) {
@@ -403,7 +400,6 @@
             data.forEach(est => {
                 const total = est.data.total || '£0.00';
                 const dateStr = new Date(est.created_at).toLocaleDateString();
-                
                 const tr = document.createElement('tr');
                 tr.className = 'lib-row';
                 tr.innerHTML = `
@@ -411,18 +407,29 @@
                     <td class="font-bold">${est.ref_code}</td>
                     <td>${est.project_name}</td>
                     <td>${total}</td>
-                    <td><button class="text-blue-600 font-bold hover:underline" onclick="loadEstimate(${est.id})">Open</button></td>
+                    <td class="flex gap-2">
+                        <button class="bg-blue-100 text-blue-700 px-3 py-1 rounded text-xs font-bold hover:bg-blue-200" onclick="loadEstimate(${est.id})">Load</button>
+                        <button class="bg-red-100 text-red-700 px-3 py-1 rounded text-xs font-bold hover:bg-red-200" onclick="deleteEstimate(${est.id})">🗑</button>
+                    </td>
                 `;
                 list.appendChild(tr);
             });
         }
 
+        async function deleteEstimate(id) {
+            if(!confirm("Are you sure you want to permanently delete this estimate?")) return;
+            const { error } = await supabase.from('estimates').delete().eq('id', id);
+            if(!error) {
+                showToast("Estimate Deleted");
+                openLibrary(); // Refresh list
+            } else {
+                alert("Error deleting: " + error.message);
+            }
+        }
+
         function filterLibrary() {
             const term = document.getElementById('lib-search').value.toLowerCase();
-            const filtered = libraryData.filter(est => 
-                est.ref_code.toLowerCase().includes(term) || 
-                est.project_name.toLowerCase().includes(term)
-            );
+            const filtered = libraryData.filter(est => est.ref_code.toLowerCase().includes(term) || est.project_name.toLowerCase().includes(term));
             renderLibrary(filtered);
         }
 
@@ -430,8 +437,7 @@
             const est = libraryData.find(e => e.id === id);
             if(!est) return;
             const data = est.data;
-            
-            currentEstimateId = id; // Set tracking ID
+            currentEstimateId = id;
 
             document.getElementById('quoteRef').value = data.ref;
             document.getElementById('projName').value = data.proj;
@@ -449,13 +455,7 @@
             const c = document.getElementById('custom-rows-container');
             c.innerHTML = '';
             data.rows.forEach(r => {
-                c.insertAdjacentHTML('beforeend', `
-                <tr class="text-xs border-b border-black">
-                    <td class="p-0"><textarea class="cell-input left" oninput="autoResize(this)">${r.desc}</textarea></td>
-                    <td class="p-0"><input type="number" class="custom-qty cell-input" value="${r.qty}" oninput="calc()"></td>
-                    <td class="p-0"><input type="number" class="custom-rate cell-input" value="${r.rate}" oninput="calc()"></td>
-                    <td class="text-center custom-total">0.0</td>
-                </tr>`);
+                c.insertAdjacentHTML('beforeend', `<tr class="text-xs border-b border-black"><td class="p-0"><textarea class="cell-input left" oninput="autoResize(this)">${r.desc}</textarea></td><td class="p-0"><input type="number" class="custom-qty cell-input" value="${r.qty}" oninput="calc()"></td><td class="p-0"><input type="number" class="custom-rate cell-input" value="${r.rate}" oninput="calc()"></td><td class="text-center custom-total">0.0</td></tr>`);
             });
             
             document.querySelectorAll('textarea').forEach(ta => autoResize(ta));
@@ -540,12 +540,14 @@
             setTxt('grandTotalDays', (totalHrs / dayHrs).toFixed(2));
 
             let totalMoney = 0;
+            const globalDays = parseFloat(document.getElementById('manualGlobalDays').value) || 1;
+
             const processMoneyItem = (item) => {
                 let lineCost = 0;
                 const qty = val(`qty_${item.id}`);
                 if(item.type === 'day') {
-                    const daysInput = document.getElementById(`days_${item.id}`);
-                    const days = daysInput ? parseFloat(daysInput.value)||0 : 1; 
+                    const rowDaysInput = document.getElementById(`days_${item.id}`);
+                    const days = rowDaysInput ? (parseFloat(rowDaysInput.value)||0) : globalDays; 
                     lineCost = qty * days * item.val;
                 } else {
                     lineCost = qty * item.val;
@@ -619,14 +621,12 @@
             showToast("Admin Settings Saved");
         }
         
-        function resetDefaults() { if(confirm("Reset?")) { location.reload(); } }
+        function resetDefaults() { if(confirm("Reset?")) { localStorage.removeItem('bh_est_config_v20'); location.reload(); } }
 
         function generatePDF() {
-            // Auto-save before download
             saveEstimate('update');
             
-            // Naming Logic
-            const ref = document.getElementById('quoteRef').value || "Draft";
+            const ref = document.getElementById('quoteRef').value || "Estimate";
             const proj = document.getElementById('projName').value.replace(/[^a-z0-9]/gi, '-') || "Project";
             const date = document.getElementById('quoteDate').value;
             const filename = `${ref}_${proj}_${date}.pdf`;
