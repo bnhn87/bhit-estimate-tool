@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BH Estimate Tool v16 (Cloud)</title>
+    <title>BH Installation Estimate Tool v18</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -14,17 +14,22 @@
     <style>
         body { font-family: 'Arial', sans-serif; background-color: #f3f4f6; color: #000; }
         
+        /* SHEET CONTAINER */
         .sheet-container { border: 2px solid #000; background: #fff; max-width: 1300px; margin: 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 2rem; }
+        
+        /* TABLE STYLES */
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         th, td { border-right: 1px solid #000; border-bottom: 1px solid #000; padding: 4px; font-size: 12px; vertical-align: middle; }
         tr:last-child td { border-bottom: none; }
         td:last-child, th:last-child { border-right: none; }
         
+        /* INPUTS */
         .cell-input { width: 100%; height: 100%; background: transparent; outline: none; text-align: center; font-family: inherit; font-size: inherit; }
         .cell-input.left { text-align: left; padding-left: 4px; }
         .cell-input:focus { background-color: #eef2ff; }
         textarea.cell-input { resize: none; overflow: hidden; min-height: 1.2em; display: block; white-space: pre-wrap; line-height: 1.2; padding-top: 2px; }
 
+        /* COLORS */
         .bg-hdr-grey { background-color: #e5e7eb; font-weight: bold; }
         .bg-hdr-green { background-color: #d1fae5; font-weight: bold; text-align: center; }
         .bg-hdr-blue { background-color: #dbeafe; font-weight: bold; }
@@ -32,7 +37,7 @@
         .bg-row-yellow { background-color: #fef3c7; }
         .bg-total-orange { background-color: #fed7aa; }
         
-        /* ADMIN & MODALS */
+        /* MODALS */
         .admin-modal { background-color: #1a1b26; color: white; }
         .admin-header { font-weight: bold; font-size: 1.1rem; margin-bottom: 0.5rem; border-bottom: 1px solid #374151; padding-bottom: 4px; display: flex; justify-content: space-between; align-items: center;}
         .admin-row { display: grid; grid-template-columns: 1fr 100px 80px 30px; gap: 8px; align-items: center; background: #24283b; padding: 6px; border-radius: 4px; margin-bottom: 6px; border: 1px solid #374151; }
@@ -42,9 +47,16 @@
         .admin-btn-del { color: #ef4444; font-weight: bold; cursor: pointer; text-align: center; }
         .admin-btn-add { background: #374151; font-size: 0.8rem; padding: 2px 8px; rounded: 4px; cursor: pointer; }
         
-        /* LOADER */
-        .spinner { border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top: 3px solid #3b82f6; width: 20px; height: 20px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* LIBRARY TABLE */
+        .lib-table th { background-color: #f3f4f6; text-align: left; padding: 8px; border-bottom: 2px solid #ddd; border-right: none; }
+        .lib-table td { border-bottom: 1px solid #eee; padding: 8px; border-right: none; }
+        .lib-row:hover { background-color: #f9fafb; cursor: pointer; }
+
+        /* TOAST */
+        #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 4px; padding: 16px; position: fixed; z-index: 100; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 14px; }
+        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
 
         /* PRINT */
         .pdf-page-break { page-break-before: always; border-top: 2px solid #000; margin-top: 20px; padding-top: 40px; }
@@ -65,16 +77,19 @@
     <div class="max-w-[1300px] mx-auto flex justify-between items-center mb-4 no-print bg-white p-3 rounded shadow">
         <div class="flex items-center gap-4">
             <div>
-                <h1 class="text-xl font-bold text-gray-800">BH Installation Estimate Generator v16</h1>
+                <h1 class="text-xl font-bold text-gray-800">BH Estimate Tool v18</h1>
                 <p class="text-xs text-gray-500 flex items-center gap-2">
                     <span id="db-status" class="w-2 h-2 rounded-full bg-red-500"></span>
-                    <span id="db-text">Connecting to Cloud...</span>
+                    <span id="db-text">Connecting...</span>
+                    <span id="current-file-id" class="hidden text-gray-300"></span>
                 </p>
             </div>
         </div>
         <div class="space-x-2 flex items-center">
-            <button onclick="cloudLoadModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-1.5 rounded text-sm font-bold shadow flex items-center gap-2">📂 Load Saved</button>
-            <button onclick="cloudSave()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm font-bold shadow flex items-center gap-2">☁️ Save to Cloud</button>
+            <button onclick="openLibrary()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-1.5 rounded text-sm font-bold shadow flex items-center gap-2">📚 Estimate Library</button>
+            <div class="h-6 w-px bg-gray-300 mx-2"></div>
+            <button onclick="saveEstimate('update')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm font-bold shadow flex items-center gap-2">💾 Save</button>
+            <button onclick="saveEstimate('revision')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded text-sm font-bold shadow flex items-center gap-2">📋 Save as Revision</button>
             <div class="h-6 w-px bg-gray-300 mx-2"></div>
             <button onclick="toggleAdmin()" class="bg-gray-800 hover:bg-black text-white px-4 py-1.5 rounded text-sm font-bold shadow">⚙️ Admin</button>
             <button onclick="generatePDF()" class="bg-gray-700 hover:bg-gray-900 text-white px-4 py-1.5 rounded text-sm font-bold shadow">Download PDF</button>
@@ -185,11 +200,40 @@
         </div>
     </div>
 
+    <div id="toast">Saved!</div>
+
+    <div id="library-view" class="hidden fixed inset-0 bg-black bg-opacity-75 overflow-y-auto p-4 z-50 flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-[900px] max-h-[85vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <h3 class="text-2xl font-bold">Estimate Library</h3>
+                <button onclick="document.getElementById('library-view').classList.add('hidden')" class="text-gray-500 hover:text-black text-xl font-bold">✕</button>
+            </div>
+            <div class="mb-4">
+                <input type="text" id="lib-search" class="w-full border p-2 rounded" placeholder="Search Project Name or Ref..." oninput="filterLibrary()">
+            </div>
+            <div class="flex-grow overflow-y-auto">
+                <table class="w-full lib-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Ref Code</th>
+                            <th>Project</th>
+                            <th>Total (£)</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lib-list">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <div id="admin-view" class="hidden fixed inset-0 bg-gray-900 bg-opacity-95 overflow-y-auto p-4 z-50 flex items-center justify-center">
         <div class="admin-modal rounded-lg shadow-2xl p-8 w-[1000px] border border-gray-700 h-[90vh] flex flex-col">
             <div class="flex justify-between items-center mb-4 border-b border-gray-600 pb-2">
                 <h2 class="text-2xl font-bold text-white">Admin Configuration (Cloud Synced)</h2>
-                <button onclick="toggleAdmin()" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded">Cancel / Close</button>
+                <button onclick="toggleAdmin()" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded">Close</button>
             </div>
             <div class="grid grid-cols-2 gap-8 overflow-y-auto flex-grow pr-2">
                 <div>
@@ -207,20 +251,7 @@
                 </div>
             </div>
             <div class="mt-4 pt-4 border-t border-gray-600 flex justify-between items-center">
-                <div id="save-msg" class="text-green-400 text-sm hidden">Settings Saved to Cloud!</div>
                 <button onclick="saveAdmin()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold text-lg px-8 py-3 rounded shadow-lg">Save & Apply Changes</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="load-view" class="hidden fixed inset-0 bg-black bg-opacity-75 overflow-y-auto p-4 z-50 flex items-center justify-center">
-        <div class="bg-white rounded-lg shadow-xl p-6 w-[600px] max-h-[80vh] flex flex-col">
-            <div class="flex justify-between items-center mb-4 border-b pb-2">
-                <h3 class="text-xl font-bold">Load Saved Estimate</h3>
-                <button onclick="document.getElementById('load-view').classList.add('hidden')" class="text-gray-500 hover:text-black">✕</button>
-            </div>
-            <div id="load-list" class="flex-grow overflow-y-auto space-y-2">
-                <div class="text-center text-gray-500 py-4">Loading recent estimates...</div>
             </div>
         </div>
     </div>
@@ -228,9 +259,7 @@
     <script>
         // --- SUPABASE CONFIG ---
         const PROJECT_URL = 'https://wgsqrjnliglemogtukly.supabase.co';
-        // Using the provided anon key
         const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indnc3Fyam5saWdsZW1vZ3R1a2x5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5ODY2MTIsImV4cCI6MjA3OTU2MjYxMn0.chlJ9Ba2kQDu_xnqMfwcRwv5pgiwHnv7FJJSzKxbPeM';
-        
         const supabase = window.supabase.createClient(PROJECT_URL, ANON_KEY);
 
         // --- APP STATE ---
@@ -245,57 +274,75 @@
         };
 
         let config = DEFAULT_CONFIG;
+        let currentEstimateId = null; // Tracks loaded estimate ID for updating
+        let libraryData = []; // For search filtering
 
-        // --- INIT ---
         window.onload = async function() {
-            // 1. Try load shared config from Cloud
             await loadSharedConfig();
-            
             addItemRow();
             renderMainSheet();
-            
             const d = new Date(); 
             document.getElementById('quoteDate').valueAsDate = d;
             d.setDate(d.getDate() + 90);
             document.getElementById('validDate').innerText = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-            
             calc();
         };
 
         async function loadSharedConfig() {
-            const status = document.getElementById('db-status');
-            const txt = document.getElementById('db-text');
             try {
                 const { data, error } = await supabase.from('app_settings').select('*').eq('id', 1).single();
-                if (data && data.config && Object.keys(data.config).length > 0) {
+                if (data && data.config) {
                     config = data.config;
-                    status.className = "w-2 h-2 rounded-full bg-green-500";
-                    txt.innerText = "Cloud Config Loaded";
-                } else {
-                    txt.innerText = "Using Local Defaults";
-                    status.className = "w-2 h-2 rounded-full bg-yellow-500";
+                    document.getElementById('db-status').className = "w-2 h-2 rounded-full bg-green-500";
+                    document.getElementById('db-text').innerText = "Cloud Connected";
                 }
-            } catch (e) {
-                console.error(e);
-                txt.innerText = "Offline / Error";
-            }
+            } catch (e) { console.error(e); }
         }
 
-        // --- CLOUD ESTIMATE FUNCTIONS ---
-        async function cloudSave() {
-            const ref = document.getElementById('quoteRef').value || "Draft";
-            const proj = document.getElementById('projName').value || "Untitled";
-            
+        function showToast(msg) {
+            const x = document.getElementById("toast");
+            x.innerText = msg;
+            x.className = "show";
+            setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
+        }
+
+        // --- SAVE LOGIC ---
+        async function saveEstimate(mode) {
             // Gather Data
+            const refInput = document.getElementById('quoteRef');
+            let ref = refInput.value || "Draft";
+            const proj = document.getElementById('projName').value || "Untitled";
+            const dateVal = document.getElementById('quoteDate').value;
+            const totalVal = document.getElementById('finalTotal').innerText;
+
+            // Revision Logic
+            if (mode === 'revision') {
+                // Regex to find -REV(number)
+                const revMatch = ref.match(/-REV(\d+)$/);
+                if (revMatch) {
+                    let nextRev = parseInt(revMatch[1]) + 1;
+                    ref = ref.replace(/-REV\d+$/, `-REV${nextRev}`);
+                } else {
+                    ref = `${ref}-REV1`;
+                }
+                // Update Input and Date
+                refInput.value = ref;
+                document.getElementById('quoteDate').valueAsDate = new Date(); // Update date to today
+                
+                currentEstimateId = null; // Clear ID so we insert new row
+            }
+
+            // Construct Payload
             const estimateData = {
                 ref, proj,
                 date: document.getElementById('quoteDate').value,
+                total: totalVal,
                 rows: Array.from(document.querySelectorAll('#custom-rows-container tr')).map(tr => ({
                     desc: tr.querySelector('textarea').value,
                     qty: tr.querySelector('.custom-qty').value,
                     rate: tr.querySelector('.custom-rate').value
                 })),
-                inputs: {}, // Collect specific IDs
+                inputs: {},
                 addresses: {
                     col: document.getElementById('colAddr').value,
                     site: document.getElementById('siteAddr').value,
@@ -304,45 +351,88 @@
                 }
             };
             
-            // Collect dynamic inputs (labour qty etc)
             document.querySelectorAll('input[type="number"], input[type="text"], input[type="checkbox"]').forEach(el => {
                 if(el.id) estimateData.inputs[el.id] = el.type === 'checkbox' ? el.checked : el.value;
             });
 
-            const { error } = await supabase.from('estimates').insert({
-                ref_code: ref,
-                project_name: proj,
-                data: estimateData
-            });
-
-            if(!error) alert("Estimate Saved to Cloud!");
-            else alert("Error saving: " + error.message);
-        }
-
-        async function cloudLoadModal() {
-            document.getElementById('load-view').classList.remove('hidden');
-            const list = document.getElementById('load-list');
-            list.innerHTML = '<div class="text-center"><div class="spinner mx-auto mb-2"></div>Fetching...</div>';
-            
-            const { data, error } = await supabase.from('estimates').select('*').order('created_at', { ascending: false }).limit(20);
-            
-            if(error) {
-                list.innerHTML = `<div class="text-red-500">Error: ${error.message}</div>`;
-                return;
+            // DB Interaction
+            let error;
+            if (mode === 'update' && currentEstimateId) {
+                // Update existing row
+                const { error: err } = await supabase.from('estimates').update({
+                    ref_code: ref,
+                    project_name: proj,
+                    data: estimateData
+                }).eq('id', currentEstimateId);
+                error = err;
+            } else {
+                // Insert new row (New Save or Revision)
+                const { data, error: err } = await supabase.from('estimates').insert({
+                    ref_code: ref,
+                    project_name: proj,
+                    data: estimateData
+                }).select();
+                if(data) currentEstimateId = data[0].id;
+                error = err;
             }
 
+            if(!error) {
+                showToast(mode === 'revision' ? `Created ${ref}!` : "Saved Successfully!");
+            } else {
+                alert("Error saving: " + error.message);
+            }
+        }
+
+        // --- LIBRARY & SEARCH ---
+        async function openLibrary() {
+            document.getElementById('library-view').classList.remove('hidden');
+            const list = document.getElementById('lib-list');
+            list.innerHTML = '<tr><td colspan="5" class="text-center p-4">Loading...</td></tr>';
+            
+            const { data, error } = await supabase.from('estimates').select('*').order('created_at', { ascending: false }).limit(50);
+            
+            if(data) {
+                libraryData = data;
+                renderLibrary(data);
+            }
+        }
+
+        function renderLibrary(data) {
+            const list = document.getElementById('lib-list');
             list.innerHTML = '';
             data.forEach(est => {
-                const div = document.createElement('div');
-                div.className = "p-3 border rounded hover:bg-gray-50 cursor-pointer flex justify-between items-center";
-                div.innerHTML = `<div><div class="font-bold">${est.ref_code}</div><div class="text-xs text-gray-500">${est.project_name} • ${new Date(est.created_at).toLocaleDateString()}</div></div> <span class="text-blue-600 text-sm font-bold">Load</span>`;
-                div.onclick = () => loadEstimate(est.data);
-                list.appendChild(div);
+                const total = est.data.total || '£0.00';
+                const dateStr = new Date(est.created_at).toLocaleDateString();
+                
+                const tr = document.createElement('tr');
+                tr.className = 'lib-row';
+                tr.innerHTML = `
+                    <td>${dateStr}</td>
+                    <td class="font-bold">${est.ref_code}</td>
+                    <td>${est.project_name}</td>
+                    <td>${total}</td>
+                    <td><button class="text-blue-600 font-bold hover:underline" onclick="loadEstimate(${est.id})">Open</button></td>
+                `;
+                list.appendChild(tr);
             });
         }
 
-        function loadEstimate(data) {
-            // Restore Fields
+        function filterLibrary() {
+            const term = document.getElementById('lib-search').value.toLowerCase();
+            const filtered = libraryData.filter(est => 
+                est.ref_code.toLowerCase().includes(term) || 
+                est.project_name.toLowerCase().includes(term)
+            );
+            renderLibrary(filtered);
+        }
+
+        function loadEstimate(id) {
+            const est = libraryData.find(e => e.id === id);
+            if(!est) return;
+            const data = est.data;
+            
+            currentEstimateId = id; // Set tracking ID
+
             document.getElementById('quoteRef').value = data.ref;
             document.getElementById('projName').value = data.proj;
             document.getElementById('quoteDate').value = data.date;
@@ -351,16 +441,11 @@
             document.getElementById('specificNotes').value = data.addresses.notes;
             document.getElementById('siteNotes').value = data.addresses.siteNotes;
 
-            // Restore Inputs
-            for (const [id, val] of Object.entries(data.inputs)) {
-                const el = document.getElementById(id);
-                if(el) {
-                    if(el.type === 'checkbox') el.checked = val;
-                    else el.value = val;
-                }
+            for (const [key, val] of Object.entries(data.inputs)) {
+                const el = document.getElementById(key);
+                if(el) { if(el.type === 'checkbox') el.checked = val; else el.value = val; }
             }
 
-            // Restore Rows
             const c = document.getElementById('custom-rows-container');
             c.innerHTML = '';
             data.rows.forEach(r => {
@@ -373,14 +458,13 @@
                 </tr>`);
             });
             
-            // Trigger Resize on textareas
             document.querySelectorAll('textarea').forEach(ta => autoResize(ta));
-
-            document.getElementById('load-view').classList.add('hidden');
+            document.getElementById('library-view').classList.add('hidden');
             calc();
+            showToast(`Loaded: ${data.ref}`);
         }
 
-        // --- RENDER & CALC (Same logic as v15, simplified for brevity) ---
+        // RENDER & CALC
         function renderMainSheet() {
             const tContainer = document.getElementById('fixed-tasks-container');
             tContainer.innerHTML = '';
@@ -425,9 +509,7 @@
             document.getElementById('lbl_sun').innerText = config.globals.find(g=>g.id==='g4').val;
         }
 
-        function syncVehicleAreas(val) {
-            document.querySelectorAll('.veh-area-slave').forEach(input => input.value = val);
-        }
+        function syncVehicleAreas(val) { document.querySelectorAll('.veh-area-slave').forEach(input => input.value = val); }
 
         function calc() {
             const val = (id) => parseFloat(document.getElementById(id)?.value) || 0;
@@ -525,40 +607,43 @@
         }
 
         function updateConfigVal(arr, idx, field, val) { if(field === 'val') val = parseFloat(val); config[arr][idx][field] = val; }
-        function addNewRow(arr) { 
-            const id = Date.now().toString().slice(-4); 
-            let type = arr === 'labour' ? 'day' : (arr === 'tasks' ? 'hrs' : 'fixed');
-            config[arr].push({ id: id, label: "New Item", val: 0, type: type }); renderAdminPanel(); 
-        }
+        function addNewRow(arr) { const id = Date.now().toString().slice(-4); let type = arr === 'labour' ? 'day' : (arr === 'tasks' ? 'hrs' : 'fixed'); config[arr].push({ id: id, label: "New Item", val: 0, type: type }); renderAdminPanel(); }
         function removeRow(arr, idx) { config[arr].splice(idx, 1); renderAdminPanel(); }
 
         async function saveAdmin() {
             config.terms = document.getElementById('adm-terms-input').value;
-            // Save to Cloud
             await supabase.from('app_settings').upsert({ id: 1, config: config });
-            
             toggleAdmin();
             renderMainSheet();
             calc();
-            alert("Admin settings saved to Cloud!");
+            showToast("Admin Settings Saved");
         }
         
-        function resetDefaults() { if(confirm("Reset local?")) { location.reload(); } }
+        function resetDefaults() { if(confirm("Reset?")) { location.reload(); } }
 
         function generatePDF() {
+            // Auto-save before download
+            saveEstimate('update');
+            
+            // Naming Logic
+            const ref = document.getElementById('quoteRef').value || "Draft";
+            const proj = document.getElementById('projName').value.replace(/[^a-z0-9]/gi, '-') || "Project";
+            const date = document.getElementById('quoteDate').value;
+            const filename = `${ref}_${proj}_${date}.pdf`;
+
             const el = document.getElementById('ui-container');
             const page2 = document.getElementById('page-2');
             page2.classList.remove('hidden-on-screen');
             page2.classList.add('pdf-page-break');
             const btns = document.querySelectorAll('.no-print');
             btns.forEach(b => b.style.display = 'none');
-            html2pdf().set({ margin: 0.2, filename: `BH_Estimate_${document.getElementById('quoteRef').value || 'Draft'}.pdf`, image: { type: 'jpeg', quality: 1 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' } }).from(el).save().then(() => {
+            html2pdf().set({ margin: 0.2, filename: filename, image: { type: 'jpeg', quality: 1 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' } }).from(el).save().then(() => {
                  btns.forEach(b => b.style.display = '');
                  page2.classList.add('hidden-on-screen'); 
                  page2.classList.remove('pdf-page-break');
             });
         }
-        function generateExcel() { alert('Excel export uses browser print/save as PDF mostly. Use Download PDF.'); }
+        function generateExcel() { alert('Excel export not available in preview.'); }
     </script>
 </body>
 </html>
